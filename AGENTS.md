@@ -82,6 +82,19 @@ Check availability before starting a second server in a local checkout.
 `pnpm-workspace.yaml` currently limits supported dependency architectures to Linux;
 inspect that setting when diagnosing a fresh Windows dependency installation.
 
+## Requested GitHub publication
+
+The user selected a public GitHub repository and GitHub Pages. The workflow in
+`.github/workflows/deploy-pages.yml` builds and deploys pushes to `main` once the
+owner's repository and Pages are connected. See `DEPLOYMENT.md` for setup and
+current prerequisites; the local workflow is not proof that GitHub is connected.
+The user also requested Write access for `gwall2524-lab`; verify the actual
+repository and account before inviting, and confirm the returned access state.
+Future requested changes should be committed and pushed to the owner's connected
+GitHub repository after relevant checks, so its Pages workflow publishes them.
+GitHub Pages and the prior Sites publication have separate URLs and deployment
+pipelines. Do not report a GitHub push as an update to the old Sites URL.
+
 ## Source map
 
 | Location | Responsibility |
@@ -202,8 +215,7 @@ Baseline observed on 2026-11-09; recheck before treating these as current failur
   follow mandatory setup for code work unless the user explicitly overrides it.
 - Count-only additions and item-based cart operations coexist. `CartPage` saves
   quantity/removal edits without emitting `cartUpdate`, so header state can lag.
-- `ProfilePage.tsx` imports `Capture02.png` while the asset is `Capture02.PNG`;
-  verify exact casing before Linux deployment.
+- `ProfilePage.tsx` now matches the asset's `Capture02.PNG` casing for Linux builds.
 - No automated test suite is configured. Browser interaction and responsive layout
   have to be checked separately from build/type checks.
 

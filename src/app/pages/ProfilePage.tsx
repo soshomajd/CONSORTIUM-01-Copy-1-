@@ -15,7 +15,7 @@ import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import albumComingSoon from "@/imports/Album-Coming_Soon-V01.png";
-import iranMap from "@/imports/Capture02.png";
+import iranMap from "@/imports/Capture02.PNG";
 import mapImage from "@/imports/4981369.png";
 import abstractShapes from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import trendImg1 from "@/imports/202067-after.jpg";

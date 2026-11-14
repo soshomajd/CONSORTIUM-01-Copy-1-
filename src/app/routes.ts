@@ -1,6 +1,6 @@
 import { createElement, Fragment } from "react";
 import { Footer } from "./components/Footer";
-import { createBrowserRouter, redirect, Outlet } from "react-router";
+import { createBrowserRouter, createHashRouter, redirect, Outlet } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { HomePage } from "./pages/Home";
 import { ProductPage } from "./pages/ProductPage";
@@ -30,7 +30,12 @@ function SiteLayout() {
   return createElement(Fragment, null, createElement(Outlet), createElement(Footer));
 }
 
-export const router = createBrowserRouter([{
+// Pages serves static files, so keep client routes in the URL fragment there.
+const createRouter = import.meta.env.VITE_GITHUB_PAGES === "true"
+  ? createHashRouter
+  : createBrowserRouter;
+
+export const router = createRouter([{
   Component: SiteLayout,
   children: [
   { path: "/",              Component: HomePage         },
