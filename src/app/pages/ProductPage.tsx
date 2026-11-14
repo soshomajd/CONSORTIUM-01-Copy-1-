@@ -1,0 +1,441 @@
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router";
+import { addToCart } from "@/app/store/cart";
+import { Heart, Share2, Bookmark, Bell, Truck, ShieldCheck, Headphones, RotateCcw, MessageSquare, CheckCircle, ShoppingCart, Clock3 } from "lucide-react";
+import { Header } from "@/app/components/Header";
+import roll1 from "@/imports/2030e111-41ab-41d3-9f51-058659c24704.png";
+import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import roll3 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import roll4 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import roll5 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import roll6 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import roll7 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
+import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+import { ProductReviews } from "@/app/components/ProductReviews";
+import { ProductOfferBenefits } from "@/app/components/ProductOfferBenefits";
+import { ProductCartControl } from "@/app/components/ProductCartControl";
+
+const F = { fontFamily: "'Vazirmatn', sans-serif" };
+
+const collections: Record<string, {
+  code: string; name?: string; brand?: string; category?: string; type: string;
+  style?: string; design?: string; material: string;
+  position: string; color: string; album: string; washable?: string;
+  dimensions?: string; outOfStock: boolean; price: number; originalPrice: number; imgs: string[];
+}> = {
+  "کتان": { code: "212001", type: "ساده", material: "زمینه کتانی", position: "دیوار داخلی", color: "کرم طبیعی", album: "آلبوم کلاسیک", outOfStock: false, price: 999999, originalPrice: 999999, imgs: [roll1, roll2, roll3, roll4, roll5, roll6, roll7] },
+  "موج":  { code: "212002", type: "ساده", material: "زمینه مدرن",  position: "دیوار داخلی", color: "آبی کرم",    album: "آلبوم لاکچر",  outOfStock: true,  price: 999999, originalPrice: 999999, imgs: [roll2, roll1, roll3, roll5, roll4, roll6, roll7] },
+  "مرمر": { code: "212003", type: "ساده", material: "زمینه سنگ",   position: "دیوار داخلی", color: "سفید خاکستری",album: "آلبوم لوکس",   outOfStock: false, price: 999999, originalPrice: 999999, imgs: [roll3, roll1, roll2, roll4, roll7, roll5, roll6] },
+  "هندسی":{ code: "212004", type: "ساده", material: "زمینه گرافیکی",position: "دیوار داخلی", color: "مشکی سفید", album: "آلبوم مدرن",   outOfStock: false, price: 999999, originalPrice: 999999, imgs: [roll4, roll2, roll3, roll5, roll6, roll1, roll7] },
+  "خطی":  { code: "212005", type: "ساده", material: "زمینه ساده",  position: "دیوار داخلی", color: "خاکستری روشن",album: "آلبوم مینیمال",outOfStock: false, price: 999999, originalPrice: 999999, imgs: [roll5, roll1, roll3, roll4, roll7, roll2, roll6] },
+  "مه":   { code: "212006", type: "ساده", material: "زمینه مدرن",  position: "دیوار داخلی", color: "کرم",         album: "آلبوم ۲",  outOfStock: true,  price: 999999, originalPrice: 999999, imgs: [roll6, roll1, roll2, roll4, roll5, roll3, roll7] },
+  "برگ":  { code: "212007", type: "ساده", material: "زمینه طبیعت", position: "دیوار داخلی", color: "سبز کرم",    album: "آلبوم کلاسیک", outOfStock: false, price: 999999, originalPrice: 999999, imgs: [roll7, roll2, roll3, roll5, roll6, roll1, roll4] },
+  // Atom album codes 6116–6135
+  ...Object.fromEntries(
+    Array.from({ length: 20 }, (_, i) => {
+      const code = String(6135 - i);
+      const url = `https://extreme-walls.com/wp-content/uploads/2025/05/${code}.webp`;
+      const extraImgs6135 = [
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-3.webp",
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-32.webp",
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-34-600x600.webp",
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-33-1.webp",
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-31.webp",
+        "https://extreme-walls.com/wp-content/uploads/2025/05/6135-2.webp",
+      ];
+      const imgs = code === "6135" ? [url, ...extraImgs6135] : [url, roll1, roll2, roll3, roll4, roll5, roll6];
+      const is6135 = code === "6135";
+      return [code, {
+        code,
+        name: is6135 ? "کاغذ دیواری طرح گلدار پنبه" : undefined,
+        brand: is6135 ? "NEXT" : undefined,
+        category: is6135 ? "آلبوم نیچرا۱" : undefined,
+        type: is6135 ? "گل" : "ساده",
+        style: is6135 ? "پست مدرن" : undefined,
+        design: is6135 ? "پتینه" : undefined,
+        material: is6135 ? "PVC" : "کاغذ دیواری",
+        position: is6135 ? "همه فضاها" : "دیوار داخلی",
+        color: is6135 ? "کرم-خاکی" : "متنوع",
+        washable: is6135 ? "دارد" : undefined,
+        dimensions: is6135 ? "۱۰ در ۵۳ سانتیمتر" : undefined,
+        album: is6135 ? "نیچرا۱" : "آلبوم اتم",
+        outOfStock: false,
+        price: is6135 ? 1_085_000 : 999999,
+        originalPrice: is6135 ? 1_300_000 : 999999,
+        imgs,
+      }];
+    })
+  ),
+};
+
+function fmt(n: number) { return n.toLocaleString("fa-IR"); }
+
+export function ProductPage() {
+  const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState(0);
+  const [added, setAdded] = useState(false);
+
+  const [qty, setQty] = useState(1);
+  const p = name ? collections[name] : null;
+
+  function handleAddToCart() {
+    if (!p || !name) return;
+    addToCart({ id: p.code, name: name, code: p.code, unitPrice: p.price });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  }
+
+  const discountPct = p && p.originalPrice > p.price
+    ? Math.round((1 - p.price / p.originalPrice) * 100)
+    : 0;
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-white" style={F}>
+
+      <Header />
+
+      {!p ? (
+        <div className="max-w-7xl mx-auto px-6 py-20 text-center">
+          <p className="text-gray-500" style={F}>محصول یافت نشد</p>
+          <button onClick={() => navigate("/")} className="mt-4 text-[#3d1a6e] underline" style={F}>بازگشت</button>
+        </div>
+      ) : (
+        <div className={`min-w-0 max-w-[1380px] mx-auto py-6 pb-16 ${p.code === "6135" ? "w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)]" : "w-full px-4 sm:px-6"}`}>
+
+          {/* ── Main layout: [image+thumbnails] | info ── */}
+          <div className={`flex flex-col xl:flex-row xl:justify-between gap-6 items-start ${p.code === "6135" ? "xl:gap-[30px]" : ""}`}>
+
+            {/* ══ Image section (right in RTL = first in DOM) ══ */}
+            <div className={`w-full min-w-0 flex flex-col ${p.code === "6135" ? "xl:w-[592px] xl:flex-none" : "xl:flex-1"}`}>
+
+              {p.code === "6135" && (
+                <div
+                  dir="rtl"
+                  className="mb-4 flex w-full flex-wrap items-center gap-3 rounded-[24px] border border-[#CA165C] bg-white px-4 py-3 text-[#CA165C] sm:flex-nowrap"
+                  style={F}
+                >
+                  <span className="shrink-0 text-sm font-black">
+                    پیشنهاد شگفت‌انگیز ویژه
+                  </span>
+
+                  <span className="shrink-0 text-xs font-semibold">
+                    ۸۵٪ فروش رفته
+                  </span>
+
+                  <div
+                    className="h-1 min-w-[72px] flex-1 overflow-hidden rounded-full"
+                    style={{ backgroundColor: "rgba(202, 22, 92, 0.15)" }}
+                  >
+                    <div className="mr-0 ml-auto h-full w-[85%] rounded-full bg-[#CA165C]" />
+                  </div>
+
+                  <div
+                    aria-hidden="true"
+                    className="h-6 w-px shrink-0"
+                    style={{ backgroundColor: "#CA165C" }}
+                  />
+
+                  <div dir="ltr" className="flex shrink-0 items-center gap-1.5">
+                    <Clock3 size={16} strokeWidth={1.8} />
+                    <span className="text-xs font-bold tracking-wider">۰۷ : ۰۳ : ۰۳</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex w-full items-start gap-3">
+
+                {/* Thumbnail strip — right side of image area, scrollable */}
+                <div
+                  className="hidden xl:flex flex-col gap-2 shrink-0 overflow-y-auto"
+                  style={{ width: 130, maxHeight: 560 }}
+                >
+                  {p.imgs.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelected(i)}
+                      style={{
+                        width: 130, height: 155, borderRadius: 14, overflow: "hidden", flexShrink: 0,
+                        border: selected === i ? "2.5px solid #370080" : "2px solid #e5e7eb",
+                        transition: "border-color 0.2s",
+                      }}
+                    >
+                      <ImageWithFallback src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Main large image */}
+                <div className="w-full min-w-0 xl:w-[450px] xl:shrink-0">
+                  <div className={`h-[420px] sm:h-[500px] xl:h-[560px] ${p.code === "6135" ? "rounded-[28px]" : "rounded-2xl"} overflow-hidden group cursor-zoom-in bg-gray-100`}>
+                    <ImageWithFallback
+                      src={p.imgs[selected]}
+                      alt={name ?? ""}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  {/* Mobile thumbnails */}
+                  <div className="xl:hidden flex gap-2 overflow-x-auto pb-2 mt-3">
+                    {p.imgs.slice(0, 5).map((img, i) => (
+                      <button key={i} onClick={() => setSelected(i)} style={{ width: 72, height: 84, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
+                        <ImageWithFallback src={img} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ══ LEFTMOST: info panel (last in RTL DOM) ══ */}
+            <div
+              className={`w-full flex flex-col min-w-0 text-right ${p.code === "6135" ? "xl:h-[626px] xl:flex-1" : "xl:w-[300px] xl:shrink-0"}`}
+              dir="rtl"
+              style={p.code === "6135" ? F : undefined}
+            >
+
+              {/* Action icons row — left-aligned (justify-end in RTL) */}
+              {p.code !== "6135" && <div className="flex items-center gap-4 mb-5 justify-end">
+                <Heart size={20} className="text-gray-400 cursor-pointer hover:text-red-500 transition-colors" />
+                <Share2 size={20} className="text-gray-400 cursor-pointer hover:text-gray-700 transition-colors" />
+                <Bookmark size={20} className="text-gray-400 cursor-pointer hover:text-[#370080] transition-colors" />
+                <Bell size={20} className="text-gray-400 cursor-pointer hover:text-[#370080] transition-colors" />
+              </div>}
+
+              {/* Product name / code heading */}
+              <div className={`flex w-full items-end justify-between gap-3 pb-3 mb-4 border-b border-gray-200 ${p.code === "6135" ? "xl:min-h-[66px]" : ""}`}>
+                <h1 className="min-w-0 text-base font-black text-gray-900 text-right leading-7" style={F}>
+                  {p.name ? p.name : `کد ${p.code}`}
+                </h1>
+                {p.code === "6135" && <div className="flex shrink-0 items-center gap-0 text-black">
+                  <button type="button" aria-label="افزودن به علاقه‌مندی‌ها" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Heart size={20} /></button>
+                  <button type="button" aria-label="ذخیره محصول" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Bookmark size={20} /></button>
+                  <button type="button" aria-label="اطلاع‌رسانی محصول" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Bell size={20} /></button>
+                </div>}
+              </div>
+
+              {/* Specs + status */}
+              <div className={`flex flex-col gap-2 mb-5 ${p.code === "6135" ? "xl:mb-2.5" : ""}`} style={F}>
+                {([
+                  { label: "برند",            value: p.brand ?? "کنسرسیوم" },
+                  ...(p.category ? [{ label: "دسته بندی", value: p.category }] : []),
+                  { label: "نوع",             value: p.type },
+                  ...(p.style    ? [{ label: "سبک",         value: p.style }]    : []),
+                  { label: "موقعیت",          value: p.position },
+                  ...(p.design   ? [{ label: "طرح",         value: p.design }]   : []),
+                  { label: "رنگ",             value: p.color },
+                  { label: "آلبوم",           value: p.album },
+                  ...(p.washable && p.code !== "6135" ? [{ label: "قابلیت شستشو", value: p.washable }] : []),
+                  ...(p.dimensions && p.code !== "6135" ? [{ label: "ابعاد هر رول", value: p.dimensions }] : []),
+                ] as { label: string; value: string }[]).map(({ label, value }) => (
+                  <div
+                    key={label}
+                    dir="rtl"
+                    className={`flex items-center gap-2 ${p.code === "6135" ? "text-base w-full justify-start text-right" : "text-sm justify-end"}`}
+                  >
+                    {p.code === "6135" ? (
+                      <>
+                        <span className="text-gray-500">{label}:</span>
+                        <span className="text-gray-800 font-semibold">{value}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-800 font-semibold">{value}</span>
+                        <span className="text-gray-500">{label} :</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+                {/* Status row */}
+                {p.code === "6135" && <div className="mt-2"><ProductOfferBenefits /></div>}
+                {p.code !== "6135" && (
+                  <div dir="rtl" className="flex items-center justify-end gap-2 text-sm">
+                    <span style={{ color: p.outOfStock ? "#CA165C" : "#16a34a", fontWeight: 600 }}>
+                      {p.outOfStock ? "عدم موجودی" : "موجود"}
+                    </span>
+                    <span className="text-gray-500">وضعیت :</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Purchase card */}
+              <div
+              className={`w-full border border-gray-200 p-5 bg-white ${
+                p.code === "6135"
+                  ? "rounded-[28px] xl:mt-auto xl:max-w-[400px] xl:mr-auto"
+                  : "rounded-2xl"
+              }`}
+
+              style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+              >
+
+                {/* Original price row + discount badge */}
+                <div className={`flex items-center justify-end gap-3 mb-1 ${p.code === "6135" ? "w-fit ml-auto" : ""}`}>
+                  {discountPct > 0 && (
+                    <span className="text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ backgroundColor: p.code === "6135" ? "#CA165C" : "#22c55e" }}>
+                      {discountPct}% تخفیف
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-400 line-through" style={F}>
+                    {fmt(p.originalPrice)} تومان
+                  </span>
+                </div>
+
+                {/* Final price */}
+                <div className={`flex items-baseline justify-end gap-2 mb-3 ${p.code === "6135" ? "w-fit ml-auto" : ""}`}>
+                  <span className={`text-sm ${p.code === "6135" ? "text-black" : "text-gray-500"}`} style={F}>تومان</span>
+                  <span className={`text-4xl font-black ${p.code === "6135" ? "text-black" : "text-gray-900"}`} style={F}>{fmt(p.price)}</span>
+                </div>
+
+                {/* Stock status */}
+                <div className="flex items-center justify-end gap-1.5 mb-4">
+                  {p.outOfStock ? (
+                    <span className="text-sm font-semibold text-red-500" style={F}>ناموجود</span>
+                  ) : (
+                    <>
+                      <span className={`text-sm font-semibold ${p.code === "6135" ? "text-[#370080]" : "text-emerald-600"}`} style={F}>موجود در انبار</span>
+                      <CheckCircle size={15} className={p.code === "6135" ? "text-[#370080]" : "text-emerald-500"} />
+                    </>
+                  )}
+                </div>
+
+                {/* Quantity selector */}
+                {!p.outOfStock && p.code !== "6135" && (
+                  <div className="flex items-center justify-end gap-3 mb-4">
+                    <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setQty(q => q + 1)}
+                        className={`w-10 h-10 text-xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center ${p.code === "6135" ? "text-[#D1D5DC]" : "text-gray-600"}`}
+                        style={F}
+                      >+</button>
+                      <span className="w-10 text-center text-sm font-bold text-gray-800" style={F}>{qty}</span>
+                      <button
+                        onClick={() => setQty(q => Math.max(1, q - 1))}
+                        className={`w-10 h-10 text-xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center ${p.code === "6135" ? "text-[#D1D5DC]" : "text-gray-600"}`}
+                        style={F}
+                      >−</button>
+                    </div>
+                    <span className="text-sm text-gray-600" style={F}>:تعداد</span>
+                  </div>
+                )}
+
+                {/* Add to cart button */}
+                {p.code === "6135" ? <ProductCartControl item={{ id: p.code, name: p.name ?? name ?? p.code, code: p.code, unitPrice: p.price, img: p.imgs[0] }} /> : <button
+                  disabled={p.outOfStock || added}
+                  onClick={handleAddToCart}
+                  className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200"
+                  style={{
+                    ...F,
+                    backgroundColor: p.outOfStock ? "#d1d5db" : added ? (p.code === "6135" ? "#4141D9" : "#16a34a") : "#370080",
+                    cursor: p.outOfStock ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <ShoppingCart size={18} />
+                  {p.outOfStock ? "اتمام موجودی" : added ? "افزوده شد ✓" : "افزودن به سبد خرید"}
+                </button>}
+
+                {/* Share button */}
+                {p.code !== "6135" && <button
+                  className={`w-full py-3 rounded-2xl border border-solid border-gray-300 font-medium text-sm flex items-center justify-center gap-2 mt-2.5 hover:bg-gray-50 transition-colors ${p.code === "6135" ? "text-[#D1D5DC]" : "text-gray-600"}`}
+                  style={F}
+                >
+                  <Share2 size={15} className={p.code === "6135" ? "text-[#D1D5DC]" : undefined} />
+                  اشتراک گذاری
+                </button>}
+              </div>
+
+            </div>
+          </div>
+          {/* ── Below product: guarantees + tabs + description ── */}
+          <ProductMeta name={name ?? ""} code={p.code} album={p.album} color={p.color} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductMeta({ name, code, album, color }: { name: string; code: string; album: string; color: string }) {
+  const [activeTab, setActiveTab] = useState<"review" | "comments">("review");
+  const F = { fontFamily: "'Vazirmatn', sans-serif" };
+
+  const guarantees = [
+    { icon: <RotateCcw size={36} strokeWidth={1.4} />, label: "ضمانت بازگشت کالا" },
+    { icon: <Headphones size={36} strokeWidth={1.4} />, label: "پشتیبانی خرید" },
+    { icon: <ShieldCheck size={36} strokeWidth={1.4} />, label: "ضمانت اصالت کالا" },
+    { icon: <Truck size={36} strokeWidth={1.4} />,      label: "تحویل سریع و آسان" },
+  ];
+
+  return (
+    <div className="mt-12" style={F}>
+            {/* 4 guarantee icons */}
+      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-6 ${code === "6135" ? "relative -top-7 rounded-[28px] border border-gray-200 bg-white px-5 pt-6 pb-7 text-[#6A7282]" : "pt-12 pb-8 border-t border-b border-gray-200"}`} style={code === "6135" ? { boxShadow: "0 2px 16px rgba(0,0,0,0.06)" } : undefined}>
+
+        {guarantees.map(({ icon, label }) => (
+          <div key={label} className="flex flex-col items-center gap-3 text-center">
+            <div className={code === "6135" ? "text-inherit" : "text-gray-700"}>{icon}</div>
+            <span className={code === "6135" ? "text-base font-normal text-gray-500" : "text-sm font-medium text-gray-700"} style={F}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {code === "6135" ? (
+        <ProductReviews productName={collections[name]?.name ?? `کاغذ دیواری ${code}`} code={code} album={album} color={color} />
+      ) : (
+      <>
+      {/* Tabs */}
+      <div className="flex items-center gap-8 border-b border-gray-200 mt-8 mb-8">
+        {[
+          { key: "review",   label: "بررسی محصول" },
+          { key: "comments", label: "نظرات کاربران" },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key as "review" | "comments")}
+            className={`pb-3 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+              activeTab === key
+                ? "border-[#3d1a6e] text-[#3d1a6e]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+            style={F}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "review" ? (
+        <div className="max-w-3xl">
+          <h2 className="text-2xl font-black text-gray-900 text-center mb-5" style={F}>کاغذ دیواری</h2>
+          <p className="text-sm leading-8 text-gray-700 text-center" style={{ ...F, lineHeight: "2.2" }}>
+            کاغذ دیواری ساده درجه یک قابل شستشو، آلبوم {album}، رول پنج متر مربع، سیزده کد رنگی (گروه ۳) &ndash; {code} &ndash; ({color})
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-8 items-start">
+          {/* Right: comment list area (first in RTL DOM = visual right) */}
+          <div className="flex-1">
+            <p className="text-sm text-gray-400 py-4" style={F}>هنوز نظری ثبت نشده است. اولین نفر باشید!</p>
+          </div>
+
+          {/* Left: submit comment card (second in RTL DOM = visual left) */}
+          <div className="shrink-0 w-[280px] rounded-xl overflow-hidden border border-gray-200">
+            <div className="bg-gray-100 px-5 py-4 flex items-center gap-2">
+              <MessageSquare size={18} className="text-gray-600 shrink-0" />
+              <span className="text-sm text-gray-700 font-medium" style={F}>نظر برای ما ارزشمنده!</span>
+            </div>
+            <div className="p-3 bg-white">
+              <button className="w-full bg-black hover:bg-gray-900 text-white text-sm font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2" style={F}>
+                <span>ثبت نظر</span>
+                <span className="text-lg leading-none">+</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      </>
+      )}
+
+    </div>
+  );
+}

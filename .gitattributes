@@ -1,0 +1,146 @@
+# Binary asset rules for the Sites source repository
+# Store complete assets in Git; the Sites repository does not provide Git LFS.
+
+# ---------------------------------------------------------------------------
+# Images & Graphics
+# ---------------------------------------------------------------------------
+*.png                -filter -diff -merge -text
+*.jpg                -filter -diff -merge -text
+*.jpeg               -filter -diff -merge -text
+*.gif                -filter -diff -merge -text
+*.bmp                -filter -diff -merge -text
+*.tiff               -filter -diff -merge -text
+*.tif                -filter -diff -merge -text
+*.ico                -filter -diff -merge -text
+*.webp               -filter -diff -merge -text
+*.psd                -filter -diff -merge -text
+*.ai                 -filter -diff -merge -text
+*.sketch             -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Video
+# ---------------------------------------------------------------------------
+*.mp4                -filter -diff -merge -text
+*.mov                -filter -diff -merge -text
+*.avi                -filter -diff -merge -text
+*.mkv                -filter -diff -merge -text
+*.wmv                -filter -diff -merge -text
+*.flv                -filter -diff -merge -text
+*.webm               -filter -diff -merge -text
+*.m4v                -filter -diff -merge -text
+*.mpg                -filter -diff -merge -text
+*.mpeg               -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Audio
+# ---------------------------------------------------------------------------
+*.mp3                -filter -diff -merge -text
+*.wav                -filter -diff -merge -text
+*.flac               -filter -diff -merge -text
+*.aac                -filter -diff -merge -text
+*.ogg                -filter -diff -merge -text
+*.m4a                -filter -diff -merge -text
+*.wma                -filter -diff -merge -text
+*.aiff               -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# 3D & Game Assets
+# ---------------------------------------------------------------------------
+*.fbx                -filter -diff -merge -text
+*.obj                -filter -diff -merge -text
+*.blend              -filter -diff -merge -text
+*.dae                -filter -diff -merge -text
+*.3ds                -filter -diff -merge -text
+*.max                -filter -diff -merge -text
+*.unity              -filter -diff -merge -text
+*.unitypackage       -filter -diff -merge -text
+*.uasset             -filter -diff -merge -text
+*.umap               -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Archives & Compressed Files
+# ---------------------------------------------------------------------------
+*.zip                -filter -diff -merge -text
+*.tar                -filter -diff -merge -text
+*.gz                 -filter -diff -merge -text
+*.bz2                -filter -diff -merge -text
+*.7z                 -filter -diff -merge -text
+*.rar                -filter -diff -merge -text
+*.tgz                -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Documents & Fonts
+# ---------------------------------------------------------------------------
+*.pdf                -filter -diff -merge -text
+*.docx               -filter -diff -merge -text
+*.xlsx               -filter -diff -merge -text
+*.pptx               -filter -diff -merge -text
+*.ttf                -filter -diff -merge -text
+*.otf                -filter -diff -merge -text
+*.woff               -filter -diff -merge -text
+*.woff2              -filter -diff -merge -text
+*.eot                -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Data & Machine Learning
+# ---------------------------------------------------------------------------
+*.parquet            -filter -diff -merge -text
+*.hdf5               -filter -diff -merge -text
+*.h5                 -filter -diff -merge -text
+*.pkl                -filter -diff -merge -text
+*.pickle             -filter -diff -merge -text
+*.npy                -filter -diff -merge -text
+*.npz                -filter -diff -merge -text
+*.bin                -filter -diff -merge -text
+*.pt                 -filter -diff -merge -text
+*.pth                -filter -diff -merge -text
+*.onnx               -filter -diff -merge -text
+*.pb                 -filter -diff -merge -text
+*.safetensors        -filter -diff -merge -text
+*.gguf               -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Databases
+# ---------------------------------------------------------------------------
+*.db                 -filter -diff -merge -text
+*.sqlite             -filter -diff -merge -text
+*.sqlite3            -filter -diff -merge -text
+*.mdb                -filter -diff -merge -text
+*.accdb              -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Executables & Libraries
+# ---------------------------------------------------------------------------
+*.exe                -filter -diff -merge -text
+*.dll                -filter -diff -merge -text
+*.so                 -filter -diff -merge -text
+*.dylib              -filter -diff -merge -text
+*.a                  -filter -diff -merge -text
+*.lib                -filter -diff -merge -text
+*.wasm               -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# Build Artifacts & Packages
+# ---------------------------------------------------------------------------
+*.jar                -filter -diff -merge -text
+*.war                -filter -diff -merge -text
+*.ear                -filter -diff -merge -text
+*.apk                -filter -diff -merge -text
+*.ipa                -filter -diff -merge -text
+*.deb                -filter -diff -merge -text
+*.rpm                -filter -diff -merge -text
+*.dmg                -filter -diff -merge -text
+*.iso                -filter -diff -merge -text
+*.img                -filter -diff -merge -text
+
+# ---------------------------------------------------------------------------
+# CAD & Scientific
+# ---------------------------------------------------------------------------
+*.dwg                -filter -diff -merge -text
+*.dxf                -filter -diff -merge -text
+*.step               -filter -diff -merge -text
+*.stp                -filter -diff -merge -text
+*.iges               -filter -diff -merge -text
+*.stl                -filter -diff -merge -text
+*.nc                 -filter -diff -merge -text
+*.mat                -filter -diff -merge -text

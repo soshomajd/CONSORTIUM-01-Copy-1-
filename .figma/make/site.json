@@ -1,0 +1,11 @@
+{
+  "title": "CONSORTIUM-01",
+  "description": "Delivers a visually cohesive website featuring a custom hero section and header designed to match provided images and color schemes for seamless branding.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
