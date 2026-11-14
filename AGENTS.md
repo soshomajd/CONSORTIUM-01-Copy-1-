@@ -82,18 +82,39 @@ Check availability before starting a second server in a local checkout.
 `pnpm-workspace.yaml` currently limits supported dependency architectures to Linux;
 inspect that setting when diagnosing a fresh Windows dependency installation.
 
-## Requested GitHub publication
+## Commit, push, and live publication
 
-The user selected a public GitHub repository and GitHub Pages. The workflow in
-`.github/workflows/deploy-pages.yml` builds and deploys pushes to `main` once the
-owner's repository and Pages are connected. See `DEPLOYMENT.md` for setup and
-current prerequisites; the local workflow is not proof that GitHub is connected.
-The user also requested Write access for `gwall2524-lab`; verify the actual
-repository and account before inviting, and confirm the returned access state.
-Future requested changes should be committed and pushed to the owner's connected
-GitHub repository after relevant checks, so its Pages workflow publishes them.
-GitHub Pages and the prior Sites publication have separate URLs and deployment
-pipelines. Do not report a GitHub push as an update to the old Sites URL.
+The user explicitly requests that future requests to commit or push also publish
+the resulting version to the live server. Treat requests such as "commit",
+"push", "کامیت", and "پوش" as authorization to complete the checked commit,
+GitHub push, and Sites deployment together, without asking for confirmation again.
+An explicit later request for local-only work, commit-only work, or no deployment
+takes precedence. Ordinary edits alone do not imply a new commit/push request.
+
+- GitHub repository: `https://github.com/soshomajd/CONSORTIUM-01-Copy-1-`, branch
+  `main`. Preserve concurrent remote changes; never force-push to publish.
+- Live host: Sites, at
+  `https://consortium-design-demo.frosty-bow-3796.chatgpt.site`.
+- Reuse `project_id` from `.openai/hosting.json`:
+  `appgprj_6af819396db88191a0e8d9e302c41e69`. Preserve its public audience and
+  existing identity; do not create a replacement Site.
+
+For each requested commit/push, run relevant checks and the production build,
+commit and push the intended changes to GitHub, then follow the installed Sites
+skill to synchronize the same source state to the Site source repository, package
+the production output, save a version, and deploy it. Use the normal Sites build
+with root base URL, not the GitHub Pages subdirectory/hash-routing build. Read the
+current skill and obtain fresh source credentials as needed; never store tokens
+in this file, source, logs, or shell arguments. Verify that deployment succeeds
+before reporting the live site as updated, and include its public URL in the
+completion message. If a step fails, report exactly what was pushed or published
+and what remains incomplete; a successful GitHub push alone is not deployment.
+
+This file records the agent's workflow, not a Git hook or an automatic server-side
+trigger for commits/pushes performed outside the agent. GitHub Pages is a separate
+optional pipeline: `.github/workflows/deploy-pages.yml` exists, but Pages was not
+enabled at the last check. Do not rely on that workflow to update the live Sites
+URL. See `DEPLOYMENT.md` for the separate Pages setup.
 
 ## Source map
 
