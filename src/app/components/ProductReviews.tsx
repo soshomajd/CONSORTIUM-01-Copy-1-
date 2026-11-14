@@ -359,7 +359,7 @@ export function ProductReviews({
                         ? "خرید این محصول را پیشنهاد می‌کنم"
                         : "خرید این محصول را پیشنهاد نمی‌کنم"}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="mr-auto flex items-center gap-2 sm:mr-0">
                       <span className="ml-1 hidden text-sm font-light text-[#370080] sm:inline">
                         این نظر مفید بود؟
                       </span>

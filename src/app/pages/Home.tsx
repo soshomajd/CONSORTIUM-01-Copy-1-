@@ -1,1014 +1,510 @@
-import { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import {
-  Clock,
-  X,
-  Search,
-  Home,
-  LayoutGrid,
-  ShoppingCart,
-  Zap,
-  User,
-  Layers,
-  Droplets,
-  Sofa,
-  ChevronLeft,
-  ChevronRight,
-  Flame,
-  Crown,
-} from "lucide-react";
-import { Header } from "@/app/components/Header";
-import brandExtremeImg from "@/imports/Brand-Extreme.png";
-import heroImg from "@/imports/Main_Slider.png";
-import heroMobileImg from "@/imports/Main_Slider-M-01_1_.png";
-import logoImg from "@/imports/LOGO01.png";
-import enamadImg from "@/imports/LOGO01.png";
-import styleClassic from "@/imports/Search-Style-Classic.png";
-import styleKids from "@/imports/Search-Style-Kids.png";
-import styleLux from "@/imports/Search-Style-Lux.png";
-import styleMinimal from "@/imports/Search-Style-Minimal.png";
-import styleModern from "@/imports/Search-Style-Modern.png";
-import spaceBedroom from "@/imports/Search-Location-Bed_Room.png";
-import spaceCorridor from "@/imports/Search-Location-Corridor.png";
-import spaceDining from "@/imports/Search-Location-Dining_Room.png";
-import spaceLiving from "@/imports/Search-Location-Living_Room.png";
-import spaceOffice from "@/imports/Search-Location-Office.png";
-import colorBlack from "@/imports/Search-Color-Black.png";
-import colorBlue from "@/imports/Search-Color-Blue.png";
-import colorBrown from "@/imports/Search-Color-Brown.png";
-import colorGreen from "@/imports/Search-Color-Green.png";
-import colorGrey from "@/imports/Search-Color-Grey.png";
-import colorOrange from "@/imports/Search-Color-Orange.png";
-import colorPink from "@/imports/Search-Color-Pink.png";
-import colorPurple from "@/imports/Search-Color-Purple.png";
-import colorRed from "@/imports/Search-Color-Red.png";
-import colorWhite from "@/imports/Search-Color-White.png";
-import brandExtreme from "@/imports/Brand-Extreme.png";
-import brandNext from "@/imports/Brand-Next.png";
-import brandWallMaster from "@/imports/Brand-WallMaster.png";
-import popupImg from "@/imports/PopUp-V03-03.png";
-import sliderNext from "@/imports/Main_Slider-D-03.png";
-import sliderExtreme from "@/imports/Main_Slider-D-02.png";
-import roll1 from "@/imports/2030e111-41ab-41d3-9f51-058659c24704.png";
-import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import roll3 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import roll4 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import roll5 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import roll6 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import roll7 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import albumComingSoon from "@/imports/Album-Coming_Soon-V01.png";
-import iconAlbum from "@/imports/Qnav-Album-V02.png";
-import iconStyle from "@/imports/Qnav-Style-V02.png";
-import iconColor from "@/imports/Qnav-Color-V02.png";
-import iconBrand from "@/imports/Qnav-Brand-V02.png";
-import iconNew from "@/imports/Qnav-New-V02.png";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+import { useEffect, useRef, useState } from "react"
+import type { RefObject } from "react"
+import { Link } from "react-router"
+import { useReducedMotion } from "motion/react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
+import { homeAssets as assets } from "@/app/components/home/assets"
+import "@/styles/home-reference.css"
 
-const navLinks = [
-  "برند",
-  "خرید محصولات",
-  "مجله/بلاگ",
-  "درباره ما",
-  "تماس با ما",
-];
-
-const features = [
+type DiscoveryTab = "style" | "color" | "space"
+const quickNavigation = [
   {
-    img: iconAlbum,
-    alt: "آلبوم‌ها",
-    title: "آلبوم‌ها",
-    subtitle: "مشاهده همه",
-    subtitleColor: "text-gray-400",
+    image: 16,
+    title: "آلبوم ها",
+    description: "مشاهده آلبوم‌ها",
+    target: "home-albums",
   },
   {
-    img: iconStyle,
-    alt: "سبک ها",
-    title: "سبک‌ها",
-    subtitle: "جستجوی طرح",
-    subtitleColor: "text-gray-400",
+    image: 17,
+    title: "سبک ها",
+    description: "جستجوی طرح",
+    target: "home-discovery",
+    tab: "style",
   },
   {
-    img: iconColor,
-    alt: "رنگها",
-    title: "رنگ‌ها",
-    subtitle: "براساس رنگ",
-    subtitleColor: "text-gray-400",
+    image: 18,
+    title: "رنگها",
+    description: "براساس رنگ",
+    target: "home-discovery",
+    tab: "color",
   },
   {
-    img: iconBrand,
-    alt: "برندها",
+    image: 19,
     title: "برندها",
-    subtitle: "برندهای عضو",
-    subtitleColor: "text-gray-400",
+    description: "برندهای عضو",
+    target: "home-brands",
   },
   {
-    img: iconNew,
-    alt: "جدیدترین ها",
-    title: "جدیدترین‌ها",
-    subtitle: "محصولات جدید",
-    subtitleColor: "text-gray-400",
+    image: 20,
+    title: "جدیدترین ها",
+    description: "محصولات جدید",
+    target: "home-new",
   },
-];
-
-const collections = [
-  { img: roll1, name: "کتان" },
-  { img: roll2, name: "موج" },
-  { img: roll3, name: "مرمر" },
-  { img: roll4, name: "هندسی" },
-  { img: roll5, name: "خطی" },
-  { img: roll6, name: "مه" },
-  { img: roll7, name: "برگ" },
-];
-
-const fontStyle = { fontFamily: "'Vazirmatn', sans-serif" };
+] as const
+const brands = [
+  {
+    image: 22,
+    title: "اکستریم والز",
+    description: "13 آلبوم | 1646 طرح",
+    slug: "extreme-walls",
+  },
+  {
+    image: 24,
+    title: "نکست والکاورینگ",
+    description: "12 آلبوم | 1440 طرح",
+    slug: "next",
+  },
+  {
+    image: 23,
+    title: "وال‌مستر",
+    description: "3 آلبوم | 300 طرح",
+    slug: "wall-master",
+  },
+  {
+    image: 27,
+    title: "فاین دکور",
+    description: "1 آلبوم | 90 طرح",
+    slug: "fine-decor",
+  },
+]
+const albumTitles = [
+  "مدلی بیس",
+  "پینت",
+  "لورن",
+  "پلوتونیوم ۲",
+  "اوپالین",
+  "اتم",
+  "نیوارا",
+  "کالکشن ۶",
+  "کالکشن ۴",
+  "کالکشن جدید",
+  "کالکشن ۵",
+  "پمپو",
+  "کالکشن ۷",
+  "تیتانیوم",
+  "کربن ۳",
+]
+const discovery = {
+  style: ["کلاسیک", "مدرن", "مینیمال", "لوکس", "کودک"].map((title, i) => ({
+    title,
+    image: 83 + i,
+  })),
+  color: [
+    "سفید",
+    "صورتی",
+    "نارنجی",
+    "قرمز",
+    "بنفش",
+    "آبی",
+    "قهوه‌ای",
+    "سبز",
+    "طوسی",
+    "مشکی",
+  ].map((title, i) => ({ title, image: 73 + i })),
+  space: ["اتاق خواب", "ناهارخوری", "پذیرایی", "فضای اداری", "راهرو"].map(
+    (title, i) => ({ title, image: 108 + i }),
+  ),
+}
+const discoveryTabs: {
+  id: DiscoveryTab
+  title: string
+  image: number
+}[] = [
+  { id: "style", title: "انتخاب براساس سبک", image: 70 },
+  { id: "color", title: "انتخاب براساس رنگ", image: 71 },
+  { id: "space", title: "انتخاب براساس فضا", image: 72 },
+]
 
 export function HomePage() {
-  const navigate = useNavigate();
-  const collectionsRef = useRef<HTMLDivElement>(null);
-  const [showPopup, setShowPopup] = useState(true);
-  const [heroSlide, setHeroSlide] = useState(0);
-
-  const heroSlides = [
-    { desktop: sliderNext,    mobile: sliderNext,    alt: "نکست والکاورینگ" },
-    { desktop: sliderExtreme, mobile: sliderExtreme, alt: "اکستریم والز" },
-    { desktop: heroImg,       mobile: heroMobileImg, alt: "کنسرسیوم کاغذدیواری" },
-  ];
-
+  const reduceMotion = useReducedMotion()
+  const [slide, setSlide] = useState(0)
+  const [heroPaused, setHeroPaused] = useState(false)
+  const [tab, setTab] = useState<DiscoveryTab>("style")
+  const [albumPage, setAlbumPage] = useState(0)
+  const [discoveryPage, setDiscoveryPage] = useState(0)
+  const albumsRef = useRef<HTMLDivElement>(null)
+  const discoveryRef = useRef<HTMLDivElement>(null)
+  const pointerX = useRef<number | null>(null)
+  const suppressHeroClick = useRef(false)
   useEffect(() => {
-    const t = setInterval(() => setHeroSlide(s => (s + 1) % heroSlides.length), 4000);
-    return () => clearInterval(t);
-  }, []);
+    if (reduceMotion || heroPaused) return
+    const timer = window.setInterval(
+      () => setSlide((value) => (value + 1) % 4),
+      7000,
+    )
+    return () => window.clearInterval(timer)
+  }, [heroPaused, reduceMotion])
 
-  const scrollCollections = (dir: "right" | "left") => {
-    if (!collectionsRef.current) return;
-    collectionsRef.current.scrollBy({
-      left: dir === "left" ? -110 : 110,
-      behavior: "smooth",
-    });
-  };
+  function goTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    })
+  }
+  function selectDiscovery(value: DiscoveryTab) {
+    setTab(value)
+    setDiscoveryPage(0)
+    if (discoveryRef.current) discoveryRef.current.scrollLeft = 0
+  }
+  function moveTrack(ref: RefObject<HTMLDivElement | null>, direction: number) {
+    ref.current?.scrollBy({
+      left: direction * ref.current.clientWidth,
+      behavior: reduceMotion ? "auto" : "smooth",
+    })
+  }
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-white pb-4 md:pb-4 pb-20"
-      style={fontStyle}
-    >
-      {/* Announcement Bar */}
-      <div className="px-4 pt-3 pb-1">
-        <div className="bg-[#2d1a6e] text-white rounded-full py-2.5 px-5 flex items-center justify-between max-w-full">
-          <button className="text-white/70 hover:text-white transition-colors shrink-0">
-            <X size={15} />
-          </button>
-          <span
-            className="font-medium text-center flex-1 text-[11px]"
-            style={fontStyle}
-          >
-            از ۳ مرداد کنسرسیوم به صورت رسمی در اختیار شما قرار
-            می‌گیرد
-          </span>
-          <div className="w-5 shrink-0" />
-        </div>
-      </div>
-
-      <Header />
-
-      {/* Mobile search bar */}
-      <div className="md:hidden px-3 py-2 border-b border-gray-100">
-        <div className="flex items-center border border-gray-200 rounded-full px-4 py-2.5 gap-2 bg-white">
-          <Search
-            size={16}
-            className="text-gray-400 shrink-0"
-          />
-          <input
-            type="text"
-            placeholder="جستجو"
-            className="flex-1 text-sm placeholder-gray-400 outline-none text-right bg-transparent"
-            style={fontStyle}
-          />
-        </div>
-      </div>
-
-      {/* Hero Slider */}
-      <section className="mx-3 sm:mx-6 my-4 relative overflow-hidden rounded-2xl">
-        {/* Slides */}
-        {heroSlides.map((slide, i) => (
-          <div
-            key={i}
-            className={`transition-opacity duration-700 ${i === heroSlide ? "opacity-100" : "opacity-0 absolute inset-0"}`}
-          >
-            <ImageWithFallback
-              src={slide.mobile}
-              alt={slide.alt}
-              className="w-full object-cover object-center sm:hidden"
-            />
-            <ImageWithFallback
-              src={slide.desktop}
-              alt={slide.alt}
-              className="w-full object-cover object-center hidden sm:block"
-              style={{ maxHeight: "560px", minHeight: "200px" }}
-            />
-          </div>
-        ))}
-
-        {/* Prev / Next arrows */}
-        <button
-          onClick={() => setHeroSlide(s => (s - 1 + heroSlides.length) % heroSlides.length)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors z-10"
-        >
-          <ChevronRight size={18} className="text-white" />
-        </button>
-        <button
-          onClick={() => setHeroSlide(s => (s + 1) % heroSlides.length)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors z-10"
-        >
-          <ChevronLeft size={18} className="text-white" />
-        </button>
-
-        {/* Dots */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setHeroSlide(i)}
-              className={`rounded-full transition-all duration-300 ${i === heroSlide ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/50"}`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Feature Icons — mobile: 3+2 grid | desktop: horizontal row */}
-      <section className="px-3 sm:px-6 pb-10">
-        {/* Mobile */}
-        <div className="md:hidden bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden px-2 py-8">
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {features.slice(0, 3).map((f) => (
-              <button
-                key={f.title}
-                className="flex flex-col items-center gap-1.5 py-7 px-2 rounded-xl transition-transform duration-200 hover:scale-105"
-              >
-                <ImageWithFallback
-                  src={f.img}
-                  alt={f.alt}
-                  className="w-14 h-14 object-contain"
-                />
-                <span
-                  className="text-[11px] font-bold text-gray-800 text-center"
-                  style={fontStyle}
-                >
-                  {f.title}
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 px-10">
-            {features.slice(3).map((f) => (
-              <button
-                key={f.title}
-                className="flex flex-col items-center gap-1.5 py-7 px-2 rounded-xl transition-transform duration-200 hover:scale-105"
-              >
-                <ImageWithFallback
-                  src={f.img}
-                  alt={f.alt}
-                  className="w-14 h-14 object-contain"
-                />
-                <span
-                  className="text-[11px] font-bold text-gray-800 text-center"
-                  style={fontStyle}
-                >
-                  {f.title}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Desktop */}
-        <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
-          <div className="flex items-stretch overflow-x-auto">
-            {features.map((feature, i) => (
-              <div
-                key={feature.title}
-                className="flex items-stretch flex-1 min-w-[80px]"
-              >
-                <button className="group flex flex-col items-center gap-2 sm:gap-4 py-10 sm:py-14 px-2 sm:px-4 flex-1 transition-all duration-200">
-                  <div className="group-hover:scale-110 transition-transform duration-200">
-                    <ImageWithFallback
-                      src={feature.img}
-                      alt={feature.alt}
-                      className="w-14 h-14 sm:w-28 sm:h-28 object-contain"
-                    />
-                  </div>
-                  <div className="text-center">
-                    <div
-                      className="font-bold text-gray-800 text-base"
-                      style={fontStyle}
-                    >
-                      {feature.title}
-                    </div>
-                    <div
-                      className={`text-sm mt-1 ${feature.subtitleColor}`}
-                      style={fontStyle}
-                    >
-                      {feature.subtitle}
-                    </div>
-                  </div>
-                </button>
-                {i < features.length - 1 && (
-                  <div className="w-px bg-[#1e3a5f] my-8" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Brands Section */}
-      <section className="px-4 sm:px-6 pb-12">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#3d1a6e] rounded-sm" />
-            <span
-              className="text-xs sm:text-base font-black text-[#2d1a6e]"
-              style={fontStyle}
-            >
-              برندهای عضو کنسرسیوم
-            </span>
-          </div>
-          <button
-            className="text-[11px] sm:text-sm text-[#e53935] font-medium hover:underline"
-            style={fontStyle}
-          >
-            مشاهده همه برندها
-          </button>
-        </div>
-
-        {/* Mobile: single row */}
-        <div
-          className="flex md:hidden gap-3 overflow-x-auto pb-1"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {[
-            {
-              name: "برند ۱",
-              slug: "products",
-              bg: "#3d1a6e",
-              Icon: Flame,
-              logo: brandExtremeImg,
-            },
-            {
-              name: "برند ۲",
-              slug: "next",
-              bg: "oklch(0.488 0.243 264.376)",
-              Icon: Zap,
-              logo: null,
-            },
-            {
-              name: "برند ۳",
-              slug: "wall-master",
-              bg: "oklch(0.645 0.246 16.439)",
-              Icon: Crown,
-              logo: null,
-            },
-          ].map((b) => (
-            <div
-              key={b.slug}
-              onClick={() => navigate(b.slug === "products" ? "/products" : `/brand/${b.slug}`)}
-              className="bg-white border border-gray-100 rounded-xl shadow-sm flex flex-col items-center justify-center py-4 px-3 gap-2 shrink-0 flex-1 min-w-0 cursor-pointer hover:shadow-md transition-shadow"
-            >
-              {b.logo ? (
-                <ImageWithFallback src={b.logo} alt={b.name} className="w-20 h-10 object-contain" />
-              ) : (
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.bg }}>
-                  <b.Icon size={18} className="text-white" />
-                </div>
-              )}
-              <div className="text-[10px] font-bold text-gray-700 text-center" style={fontStyle}>
-                {b.logo ? "اکستریم والز" : b.name}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop: centered wrap */}
-        <div className="hidden md:flex justify-center gap-8 flex-wrap">
-          {[
-            {
-              name: "برند ۱",
-              slug: "products",
-              bg: "#3d1a6e",
-              Icon: Flame,
-              logo: brandExtremeImg,
-            },
-            {
-              name: "برند ۲",
-              slug: "next",
-              bg: "oklch(0.488 0.243 264.376)",
-              Icon: Zap,
-              logo: null,
-            },
-            {
-              name: "برند ۳",
-              slug: "wall-master",
-              bg: "oklch(0.645 0.246 16.439)",
-              Icon: Crown,
-              logo: null,
-            },
-          ].map((b) => (
-            <div
-              key={b.slug}
-              onClick={() => navigate(b.slug === "products" ? "/products" : `/brand/${b.slug}`)}
-              className="bg-white border border-gray-100 rounded-2xl shadow-md flex flex-col items-center justify-center py-8 px-8 gap-4 w-52 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
-            >
-              {b.logo ? (
-                <ImageWithFallback src={b.logo} alt={b.name} className="w-36 h-16 object-contain" />
-              ) : (
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: b.bg }}>
-                  <b.Icon size={28} className="text-white" />
-                </div>
-              )}
-              <div className="text-sm font-bold text-gray-800 text-center" style={fontStyle}>
-                {b.logo ? "اکستریم والز" : b.name}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Albums Carousel Section */}
-      <AlbumsSection />
-
-      {/* Styles / Color / Space Section */}
-      <StylesSection />
-
-      {/* New Collections Section */}
-      <section className="px-4 sm:px-6 pb-14">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#3d1a6e] rounded-sm" />
-            <span
-              className="text-xs sm:text-base font-black text-[#2d1a6e]"
-              style={fontStyle}
-            >
-              کالکشن های جدید
-            </span>
-          </div>
-          <button
-            className="text-[11px] sm:text-sm text-[#e53935] font-medium hover:underline"
-            style={fontStyle}
-          >
-            مشاهده همه
-          </button>
-        </div>
-        <div
-          className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-8"
-          style={{
-            boxShadow: "0 20px 60px rgba(150,150,180,0.15)",
+    <div className="reference-home" dir="rtl">
+      <main className="home-container">
+        <section
+          className="home-hero"
+          aria-label="بنرهای کنسرسیوم"
+          aria-roledescription="کاروسل"
+          onMouseEnter={() => setHeroPaused(true)}
+          onMouseLeave={() => setHeroPaused(false)}
+          onFocusCapture={() => setHeroPaused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node))
+              setHeroPaused(false)
           }}
+          onPointerDown={(event) => {
+            suppressHeroClick.current = false
+            pointerX.current = event.clientX
+          }}
+          onPointerUp={(event) => {
+            if (
+              pointerX.current !== null &&
+              Math.abs(event.clientX - pointerX.current) > 40
+            ) {
+              const direction = event.clientX > pointerX.current ? 3 : 1
+              suppressHeroClick.current = true
+              setSlide((value) => (value + direction) % 4)
+            }
+            pointerX.current = null
+          }}
+          onPointerCancel={() => {
+            pointerX.current = null
+          }}
+          onClickCapture={(event) => {
+            if (!suppressHeroClick.current) return
+            event.preventDefault()
+            event.stopPropagation()
+            suppressHeroClick.current = false
+          }}
+          onDragStart={(event) => event.preventDefault()}
         >
-          {/* mobile: horizontal slider with arrows */}
-          <div className="relative sm:hidden">
-            <button
-              onClick={() => scrollCollections("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 -translate-x-1 z-10 w-7 h-7 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center"
+          {[0, 1, 2, 3].map((index) => (
+            <Link
+              key={index}
+              to="/products"
+              tabIndex={slide === index ? 0 : -1}
+              aria-hidden={slide !== index}
+              className={`home-hero-slide ${
+                slide === index ? "is-active" : ""
+              }`}
             >
-              <ChevronRight
-                size={14}
-                className="text-gray-600"
+              <picture>
+                <source
+                  media="(min-width: 1024px)"
+                  srcSet={assets[8 + index]}
+                />
+                <img
+                  src={assets[12 + index]}
+                  alt={
+                    [
+                      "کنسرسیوم؛ خانه برندهای کاغذ دیواری",
+                      "کالکشن جدید مدلی بیس",
+                      "آلبوم پینت",
+                      "کالکشن لورن",
+                    ][index]
+                  }
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  draggable={false}
+                />
+              </picture>
+            </Link>
+          ))}
+          <button
+            type="button"
+            className="home-hero-previous"
+            aria-label="بنر قبلی"
+            onClick={() => setSlide((value) => (value + 3) % 4)}
+          >
+            <ChevronLeft size={27} />
+          </button>
+          <button
+            type="button"
+            className="home-hero-next"
+            aria-label="بنر بعدی"
+            onClick={() => setSlide((value) => (value + 1) % 4)}
+          >
+            <ChevronRight size={27} />
+          </button>
+          <div className="home-dots">
+            {[0, 1, 2, 3].map((index) => (
+              <button
+                key={index}
+                type="button"
+                className={index === slide ? "is-active" : ""}
+                aria-label={`نمایش بنر ${(index + 1).toLocaleString("fa-IR")}`}
+                aria-pressed={index === slide}
+                onClick={() => setSlide(index)}
               />
-            </button>
-            <div
-              ref={collectionsRef}
-              className="flex gap-3 overflow-x-auto px-6 py-1"
-              style={{
-                scrollSnapType: "x mandatory",
-                direction: "ltr",
-                scrollbarWidth: "none",
+            ))}
+          </div>
+        </section>
+        <nav
+          className="home-quick-navigation home-panel"
+          aria-label="دسترسی سریع محصولات"
+          dir="ltr"
+        >
+          {quickNavigation.map((item) => (
+            <button
+              key={item.image}
+              type="button"
+              onClick={() => {
+                if ("tab" in item) selectDiscovery(item.tab)
+                goTo(item.target)
               }}
             >
-              {collections.map((item) => (
-                <div
-                  key={item.name}
-                  className="shrink-0 flex flex-col items-center gap-1.5 cursor-pointer group"
-                  style={{ scrollSnapAlign: "start" }}
-                  onClick={() =>
-                    navigate(`/product/${item.name}`)
-                  }
-                >
-                  <div
-                    className="rounded-xl overflow-hidden group-hover:scale-[1.04] transition-transform duration-300"
-                    style={{
-                      width: "88px",
-                      height: "176px",
-                      boxShadow:
-                        "0 6px 18px rgba(100,120,160,0.18)",
-                    }}
-                  >
-                    <ImageWithFallback
-                      src={item.img}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div
-                    className="text-[10px] font-bold text-gray-700 text-center"
-                    style={fontStyle}
-                  >
-                    {item.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => scrollCollections("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 translate-x-1 z-10 w-7 h-7 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center"
-            >
-              <ChevronLeft
-                size={14}
-                className="text-gray-600"
-              />
+              <img src={assets[item.image]} alt="" />
+              <strong>{item.title}</strong>
+              <span>{item.description}</span>
             </button>
+          ))}
+        </nav>
+        <section id="home-brands" className="home-brands home-section">
+          <div className="home-section-heading">
+            <h2>برندهای عضو کنسرسیوم</h2>
+            <Link to="/products">مشاهده همه برندها</Link>
           </div>
-
-          {/* desktop: flex wrap centered */}
-          <div className="hidden sm:flex flex-row gap-5 justify-center flex-wrap">
-            {collections.map((item) => (
-              <div
-                key={item.name}
-                className="shrink-0 flex flex-col items-center gap-2 cursor-pointer group"
-                onClick={() =>
-                  navigate(`/product/${item.name}`)
-                }
+          <div className="home-brands-grid" dir="ltr">
+            {brands.map((brand) => (
+              <Link
+                to={`/products?brand=${brand.slug}`}
+                key={brand.slug}
+                className="home-brand-card home-panel"
+                dir="rtl"
               >
-                <div
-                  className="rounded-2xl overflow-hidden group-hover:scale-[1.04] transition-transform duration-300"
-                  style={{
-                    width: "155px",
-                    height: "310px",
-                    boxShadow:
-                      "0 8px 28px rgba(100,120,160,0.18)",
-                  }}
-                >
-                  <ImageWithFallback
-                    src={item.img}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div
-                  className="text-sm font-bold text-gray-700 text-center"
-                  style={fontStyle}
-                >
-                  {item.name}
-                </div>
-              </div>
+                <img
+                  src={assets[brand.image]}
+                  alt={brand.title}
+                  loading="lazy"
+                />
+                <strong>{brand.title}</strong>
+                <span>{brand.description}</span>
+              </Link>
             ))}
           </div>
-        </div>
-      </section>
-
-
-      {/* Bottom Tab Bar — mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-pb">
-        <div className="flex items-center justify-around py-2 px-1">
-          {[
-            {
-              icon: Home,
-              label: "خانه",
-              active: true,
-              action: () => navigate("/"),
-            },
-            {
-              icon: LayoutGrid,
-              label: "دسته‌بندی",
-              active: false,
-              action: () => {},
-            },
-            {
-              icon: ShoppingCart,
-              label: "سبد خرید",
-              active: false,
-              action: () => navigate("/cart"),
-            },
-            {
-              icon: Zap,
-              label: "سفارش سریع",
-              active: false,
-              action: () => navigate("/profile"),
-            },
-            {
-              icon: User,
-              label: "پروفایل",
-              active: false,
-              action: () => navigate("/profile"),
-            },
-          ].map(({ icon: Icon, label, active, action }) => (
-            <button
-              key={label}
-              onClick={action}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors ${active ? "text-[#3d1a6e]" : "text-gray-500"}`}
+        </section>
+        <section id="home-albums" className="home-albums home-section">
+          <div className="home-section-heading">
+            <h2>آلبوم‌های منتخب</h2>
+          </div>
+          <div className="home-album-carousel">
+            <div
+              ref={albumsRef}
+              className="home-album-track home-scroll-track"
+              dir="ltr"
+              onScroll={() => {
+                const el = albumsRef.current
+                if (el) setAlbumPage(Math.round(el.scrollLeft / el.clientWidth))
+              }}
             >
-              <Icon
-                size={22}
-                strokeWidth={active ? 2.5 : 1.8}
-              />
-              <span
-                className="text-[10px] font-medium"
-                style={fontStyle}
-              >
-                {label}
-              </span>
+              {albumTitles.map((title, index) => (
+                <Link
+                  to={`/products?album=${encodeURIComponent(title)}`}
+                  key={index}
+                >
+                  <img
+                    src={assets[28 + index]}
+                    alt={`آلبوم ${title}`}
+                    loading="lazy"
+                  />
+                </Link>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="home-track-previous"
+              aria-label="آلبوم‌های قبلی"
+              onClick={() => moveTrack(albumsRef, -1)}
+            >
+              <ChevronLeft size={22} />
             </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* Popup */}
-      {showPopup && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-          onClick={() => setShowPopup(false)}
+            <button
+              type="button"
+              className="home-track-next"
+              aria-label="آلبوم‌های بعدی"
+              onClick={() => moveTrack(albumsRef, 1)}
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+          <div className="home-dots home-track-dots">
+            {[0, 1, 2].map((index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`صفحه آلبوم ${(index + 1).toLocaleString("fa-IR")}`}
+                className={Math.min(albumPage, 2) === index ? "is-active" : ""}
+                onClick={() =>
+                  albumsRef.current?.scrollTo({
+                    left: index * albumsRef.current.clientWidth,
+                    behavior: reduceMotion ? "auto" : "smooth",
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+        <section
+          id="home-discovery"
+          className="home-discovery home-section"
+          aria-label="انتخاب کاغذ دیواری"
         >
           <div
-            className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl sm:max-w-3xl p-5 sm:p-7"
-            onClick={(e) => e.stopPropagation()}
+            className="home-discovery-tabs"
+            role="tablist"
+            aria-label="روش انتخاب کاغذ دیواری"
           >
-            {/* X button */}
-            <button
-              onClick={() => setShowPopup(false)}
-              className="absolute top-3 left-3 z-10 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 transition-colors flex items-center justify-center"
-            >
-              <X size={18} className="text-white" />
-            </button>
-
-            {/* Image */}
-            <div className="rounded-2xl overflow-hidden">
-              <ImageWithFallback
-                src={popupImg}
-                alt="کنسرسیوم"
-                className="w-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const styleItems = [
-  { img: styleClassic, label: "کلاسیک" },
-  { img: styleKids, label: "کودک" },
-  { img: styleLux, label: "لوکس" },
-  { img: styleMinimal, label: "مینیمال" },
-  { img: styleModern, label: "مدرن" },
-];
-
-const spaceItems = [
-  { img: spaceBedroom, label: "اتاق خواب" },
-  { img: spaceCorridor, label: "راهرو" },
-  { img: spaceDining, label: "اتاق غذاخوری" },
-  { img: spaceLiving, label: "نشیمن" },
-  { img: spaceOffice, label: "دفتر کار" },
-];
-
-const colorItems = [
-  { img: colorBlack, label: "سیاه" },
-  { img: colorBlue, label: "آبی" },
-  { img: colorBrown, label: "قهوه‌ای" },
-  { img: colorGreen, label: "سبز" },
-  { img: colorGrey, label: "خاکستری" },
-  { img: colorOrange, label: "نارنجی" },
-  { img: colorPink, label: "صورتی" },
-  { img: colorPurple, label: "بنفش" },
-  { img: colorRed, label: "قرمز" },
-  { img: colorWhite, label: "سفید" },
-];
-
-const tabs = [
-  { key: "style", label: "براساس سبک", icon: Layers },
-  { key: "color", label: "براساس رنگ", icon: Droplets },
-  { key: "space", label: "براساس فضا", icon: Sofa },
-] as const;
-
-const GRID_PAGE_SIZE = 5; // 1 row × 5 cols
-
-function StylesSection() {
-  const [active, setActive] = useState<
-    "style" | "color" | "space"
-  >("style");
-  const [colorPage, setColorPage] = useState(0);
-
-  const totalColorPages = Math.ceil(
-    colorItems.length / GRID_PAGE_SIZE,
-  );
-  const visibleColors = colorItems.slice(
-    colorPage * GRID_PAGE_SIZE,
-    (colorPage + 1) * GRID_PAGE_SIZE,
-  );
-
-  /* shared image grid for style/space on mobile: 2-col, desktop: flex row */
-  const StaticGrid = ({
-    items,
-  }: {
-    items: { img: string; label: string }[];
-  }) => {
-    const isOdd = items.length % 2 === 1;
-    return (
-      <>
-        {/* mobile: 2-col grid, last item centered if odd */}
-        <div className="grid grid-cols-2 gap-2 sm:hidden">
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className={`overflow-hidden rounded-xl cursor-pointer group ${isOdd && i === items.length - 1 ? "col-span-2 w-1/2 mx-auto" : ""}`}
-            >
-              <ImageWithFallback
-                src={item.img}
-                alt={item.label}
-                className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          ))}
-        </div>
-        {/* desktop: flex row */}
-        <div className="hidden sm:flex flex-row justify-center gap-5 flex-wrap">
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="overflow-hidden rounded-2xl cursor-pointer group shrink-0"
-            >
-              <ImageWithFallback
-                src={item.img}
-                alt={item.label}
-                className="w-64 h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  };
-
-  return (
-    <section className="px-4 sm:px-6 pb-14">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#3d1a6e] rounded-sm" />
-        <span
-          className="text-xs sm:text-base font-black text-[#2d1a6e]"
-          style={fontStyle}
-        >
-          جستجو براساس
-        </span>
-      </div>
-
-      {/* Tabs — outside container on mobile, inside on desktop */}
-      <div className="flex gap-2 mb-3 sm:hidden">
-        {tabs.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setActive(key)}
-            className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full transition-all flex-1 justify-center ${
-              active === key
-                ? "bg-[#3d1a6e] text-white"
-                : "bg-gray-50 border border-gray-200 text-gray-600"
-            }`}
-            style={fontStyle}
-          >
-            <Icon size={12} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div
-        className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6"
-        style={{
-          boxShadow: "0 20px 60px rgba(150,150,180,0.18)",
-        }}
-      >
-        {/* Tabs — inside container on desktop only */}
-        <div className="hidden sm:flex gap-2 mb-5 flex-wrap justify-start">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setActive(key)}
-              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full transition-all ${
-                active === key
-                  ? "bg-[#3d1a6e] text-white"
-                  : "bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#3d1a6e]"
-              }`}
-              style={fontStyle}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {active === "style" ? (
-          <StaticGrid items={styleItems} />
-        ) : active === "space" ? (
-          <StaticGrid items={spaceItems} />
-        ) : (
-          /* براساس رنگ — 4-per-page slider */
-          <div className="relative">
-            <button
-              onClick={() =>
-                setColorPage((p) => Math.max(0, p - 1))
-              }
-              disabled={colorPage === 0}
-              className="absolute right-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 w-8 h-8 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center disabled:opacity-30 hover:border-[#3d1a6e] transition-colors"
-            >
-              <ChevronRight
-                size={16}
-                className="text-gray-600"
-              />
-            </button>
-
-            {/* mobile: 2-col grid, last item centered if odd */}
-            <div className="grid grid-cols-2 gap-2 sm:hidden">
-              {visibleColors.map((item, i) => (
-                <div
-                  key={i}
-                  className={`overflow-hidden rounded-xl cursor-pointer group ${visibleColors.length % 2 === 1 && i === visibleColors.length - 1 ? "col-span-2 w-1/2 mx-auto" : ""}`}
-                >
-                  <ImageWithFallback
-                    src={item.img}
-                    alt={item.label}
-                    className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ))}
-            </div>
-            {/* desktop: flex row */}
-            <div className="hidden sm:flex flex-row justify-center gap-5 flex-wrap px-5">
-              {visibleColors.map((item, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-2xl cursor-pointer group shrink-0"
-                >
-                  <ImageWithFallback
-                    src={item.img}
-                    alt={item.label}
-                    className="w-64 h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() =>
-                setColorPage((p) =>
-                  Math.min(totalColorPages - 1, p + 1),
-                )
-              }
-              disabled={colorPage === totalColorPages - 1}
-              className="absolute left-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 w-8 h-8 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center disabled:opacity-30 hover:border-[#3d1a6e] transition-colors"
-            >
-              <ChevronLeft
-                size={16}
-                className="text-gray-600"
-              />
-            </button>
-
-            {totalColorPages > 1 && (
-              <div className="flex justify-center gap-1.5 mt-4">
-                {Array.from({ length: totalColorPages }).map(
-                  (_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setColorPage(i)}
-                      className={`rounded-full transition-all ${i === colorPage ? "w-5 h-2 bg-[#3d1a6e]" : "w-2 h-2 bg-gray-300"}`}
-                    />
-                  ),
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-const albumColors = [
-  "from-violet-500 to-purple-700",
-  "from-sky-400 to-blue-600",
-  "from-emerald-400 to-teal-600",
-  "from-rose-400 to-pink-600",
-  "from-amber-400 to-orange-500",
-  "from-fuchsia-500 to-purple-600",
-];
-
-function AlbumsSection() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const CARD_W_MOBILE = 110;
-  const CARD_W_DESKTOP = 200;
-
-  const scroll = (dir: "right" | "left") => {
-    if (!scrollRef.current) return;
-    const w =
-      window.innerWidth < 640
-        ? CARD_W_MOBILE + 12
-        : CARD_W_DESKTOP + 20;
-    scrollRef.current.scrollBy({
-      left: dir === "left" ? -w : w,
-      behavior: "smooth",
-    });
-  };
-
-  return (
-    <section className="px-4 sm:px-6 pb-14">
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#3d1a6e] rounded-sm" />
-          <span
-            className="text-xs sm:text-base font-black text-[#2d1a6e]"
-            style={fontStyle}
-          >
-            آلبوم‌های منتخب
-          </span>
-        </div>
-        <button
-          className="text-[11px] sm:text-sm text-[#e53935] font-medium hover:underline"
-          style={fontStyle}
-        >
-          مشاهده همه آلبوم ها
-        </button>
-      </div>
-      <div className="relative">
-        <button
-          onClick={() => scroll("right")}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-9 sm:h-9 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-purple-50 transition-colors"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-3 h-3 sm:w-4 sm:h-4"
-          >
-            <path
-              d="M9 18l6-6-6-6"
-              stroke="#3d1a6e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <div
-          ref={scrollRef}
-          className="flex gap-3 sm:gap-5 overflow-x-auto px-8 sm:px-10 py-2 sm:justify-center"
-          style={{
-            scrollSnapType: "x mandatory",
-            direction: "ltr",
-            scrollbarWidth: "none",
-          }}
-        >
-          {albumColors.map((_, i) => (
-            <div
-              key={i}
-              className="shrink-0 w-[110px] sm:w-[200px] flex flex-col gap-1.5 sm:gap-2"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-md">
-                <ImageWithFallback
-                  src={albumComingSoon}
-                  alt={`آلبوم ${i + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <p
-                className="text-center text-[11px] sm:text-sm font-bold text-gray-700"
-                style={fontStyle}
+            {discoveryTabs.map((item) => (
+              <button
+                key={item.id}
+                id={`home-tab-${item.id}`}
+                role="tab"
+                type="button"
+                aria-selected={tab === item.id}
+                aria-controls={`home-panel-${item.id}`}
+                onClick={() => selectDiscovery(item.id)}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+                    return
+                  event.preventDefault()
+                  const index = discoveryTabs.findIndex(
+                    (value) => value.id === tab,
+                  )
+                  const next =
+                    discoveryTabs[
+                      (index + (event.key === "ArrowRight" ? 1 : 2)) % 3
+                    ]
+                  selectDiscovery(next.id)
+                  document.getElementById(`home-tab-${next.id}`)?.focus()
+                }}
+                tabIndex={tab === item.id ? 0 : -1}
               >
-                آلبوم {(i + 1).toLocaleString("fa-IR")}
-              </p>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={() => scroll("left")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-9 sm:h-9 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-purple-50 transition-colors"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-3 h-3 sm:w-4 sm:h-4"
+                <img src={assets[item.image]} alt="" />
+                <span>{item.title}</span>
+              </button>
+            ))}
+          </div>
+          <div
+            className="home-discovery-results"
+            role="tabpanel"
+            id={`home-panel-${tab}`}
+            aria-labelledby={`home-tab-${tab}`}
           >
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="#3d1a6e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-    </section>
-  );
+            <div className="home-discovery-desktop">
+              <div
+                ref={discoveryRef}
+                className="home-category-track home-scroll-track"
+                dir="ltr"
+                onScroll={() => {
+                  const el = discoveryRef.current
+                  if (el)
+                    setDiscoveryPage(Math.round(el.scrollLeft / el.clientWidth))
+                }}
+              >
+                {discovery[tab].map((item) => (
+                  <Link
+                    to={`/products?${tab}=${encodeURIComponent(item.title)}`}
+                    key={item.image}
+                  >
+                    <img
+                      src={assets[item.image]}
+                      alt={item.title}
+                      loading="lazy"
+                    />
+                  </Link>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="home-track-previous"
+                aria-label="گزینه‌های قبلی"
+                onClick={() => moveTrack(discoveryRef, -1)}
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                className="home-track-next"
+                aria-label="گزینه‌های بعدی"
+                onClick={() => moveTrack(discoveryRef, 1)}
+              >
+                <ChevronRight size={22} />
+              </button>
+              <div className="home-dots home-track-dots">
+                {[0, 1].map((index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    aria-label={`صفحه گزینه‌ها ${(index + 1).toLocaleString("fa-IR")}`}
+                    className={
+                      Math.min(discoveryPage, 1) === index ? "is-active" : ""
+                    }
+                    onClick={() =>
+                      discoveryRef.current?.scrollTo({
+                        left: index * discoveryRef.current.clientWidth,
+                        behavior: reduceMotion ? "auto" : "smooth",
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="home-discovery-mobile">
+              {discovery[tab].map((item) => (
+                <Link
+                  to={`/products?${tab}=${encodeURIComponent(item.title)}`}
+                  key={item.image}
+                >
+                  <span className="home-category-description home-panel">
+                    <strong>{item.title}</strong>
+                    <span dir="ltr">400+</span>
+                  </span>
+                  <img
+                    src={assets[item.image]}
+                    alt={item.title}
+                    loading="lazy"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section id="home-new" className="home-new home-section">
+          <div className="home-section-heading">
+            <h2>کالکشن های جدید</h2>
+            <Link to="/products">مشاهده جدیدترین‌ها</Link>
+          </div>
+          <div className="home-new-panel home-panel">
+            <div className="home-products-track home-scroll-track">
+              {Array.from({ length: 10 }, (_, index) => (
+                <Link to="/product/6135" key={index}>
+                  <ImageWithFallback
+                    src={assets[124 + index]}
+                    alt={`مدلی بیس ${501012 - index}`}
+                    loading="lazy"
+                  />
+                  <span>مدلی بیس {501012 - index}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
 }

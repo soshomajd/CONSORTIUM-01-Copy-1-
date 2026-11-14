@@ -1,6 +1,7 @@
+import { Header } from "./components/Header";
 import { createElement, Fragment } from "react";
 import { Footer } from "./components/Footer";
-import { createBrowserRouter, redirect, Outlet } from "react-router";
+import { createBrowserRouter, redirect, Outlet, useLocation } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { HomePage } from "./pages/Home";
 import { ProductPage } from "./pages/ProductPage";
@@ -27,7 +28,8 @@ function existingBrandRoute({ params }: LoaderFunctionArgs) {
 }
 
 function SiteLayout() {
-  return createElement(Fragment, null, createElement(Outlet), createElement(Footer));
+  const location = useLocation();
+  return createElement(Fragment, null, createElement(Header), createElement(Outlet), createElement(Footer, { home: location.pathname === "/" }));
 }
 
 export const router = createBrowserRouter([{

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Header } from "@/app/components/Header";
 import { getUser } from "@/app/components/Header";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
@@ -921,7 +920,7 @@ export function CheckoutPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       {/* ── Step validation notification ── */}
       <AnimatePresence>

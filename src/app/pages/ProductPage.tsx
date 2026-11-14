@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { addToCart } from "@/app/store/cart";
-import { Heart, Share2, Bookmark, Bell, Truck, ShieldCheck, Headphones, RotateCcw, MessageSquare, CheckCircle, ShoppingCart, Clock3 } from "lucide-react";
-import { Header } from "@/app/components/Header";
+import { Heart, Share2, Bookmark, Bell, Truck, ShieldCheck, Headphones, RotateCcw, MessageSquare, CheckCircle, ShoppingCart, Clock3, Star } from "lucide-react";
 import roll1 from "@/imports/2030e111-41ab-41d3-9f51-058659c24704.png";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import roll3 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
@@ -93,7 +92,6 @@ export function ProductPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
 
-      <Header />
 
       {!p ? (
         <div className="max-w-7xl mx-auto px-6 py-20 text-center">
@@ -107,15 +105,15 @@ export function ProductPage() {
           <div className={`flex flex-col xl:flex-row xl:justify-between gap-6 items-start ${p.code === "6135" ? "xl:gap-[30px]" : ""}`}>
 
             {/* ══ Image section (right in RTL = first in DOM) ══ */}
-            <div className={`w-full min-w-0 flex flex-col ${p.code === "6135" ? "xl:w-[592px] xl:flex-none" : "xl:flex-1"}`}>
+            <div className={`w-full min-w-0 flex flex-col ${p.code === "6135" ? "mx-auto max-w-[592px] xl:mx-0 xl:w-[592px] xl:flex-none" : "xl:flex-1"}`}>
 
               {p.code === "6135" && (
                 <div
                   dir="rtl"
-                  className="mb-4 flex w-full flex-wrap items-center gap-3 rounded-[24px] border border-[#CA165C] bg-white px-4 py-3 text-[#CA165C] sm:flex-nowrap"
+                  className="mb-4 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[24px] border border-[#CA165C] bg-white px-4 py-3 text-[#CA165C] xl:flex xl:flex-nowrap"
                   style={F}
                 >
-                  <span className="shrink-0 text-sm font-black">
+                  <span className="col-span-3 shrink-0 text-sm font-black xl:col-span-1">
                     پیشنهاد شگفت‌انگیز ویژه
                   </span>
 
@@ -124,7 +122,7 @@ export function ProductPage() {
                   </span>
 
                   <div
-                    className="h-1 min-w-[72px] flex-1 overflow-hidden rounded-full"
+                    className="h-1 min-w-0 flex-1 overflow-hidden rounded-full xl:min-w-[72px]"
                     style={{ backgroundColor: "rgba(202, 22, 92, 0.15)" }}
                   >
                     <div className="mr-0 ml-auto h-full w-[85%] rounded-full bg-[#CA165C]" />
@@ -132,7 +130,7 @@ export function ProductPage() {
 
                   <div
                     aria-hidden="true"
-                    className="h-6 w-px shrink-0"
+                    className="hidden h-6 w-px shrink-0 xl:block"
                     style={{ backgroundColor: "#CA165C" }}
                   />
 
@@ -153,9 +151,13 @@ export function ProductPage() {
                   {p.imgs.map((img, i) => (
                     <button
                       key={i}
+                      type="button"
+                      aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`}
+                      aria-pressed={selected === i}
+                      className="focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]"
                       onClick={() => setSelected(i)}
                       style={{
-                        width: 130, height: 155, borderRadius: 14, overflow: "hidden", flexShrink: 0,
+                        width: 130, height: p.code === "6135" ? undefined : 155, aspectRatio: p.code === "6135" ? "26 / 31" : undefined, borderRadius: 14, overflow: "hidden", flexShrink: 0,
                         border: selected === i ? "2.5px solid #370080" : "2px solid #e5e7eb",
                         transition: "border-color 0.2s",
                       }}
@@ -166,18 +168,18 @@ export function ProductPage() {
                 </div>
 
                 {/* Main large image */}
-                <div className="w-full min-w-0 xl:w-[450px] xl:shrink-0">
-                  <div className={`h-[420px] sm:h-[500px] xl:h-[560px] ${p.code === "6135" ? "rounded-[28px]" : "rounded-2xl"} overflow-hidden group cursor-zoom-in bg-gray-100`}>
+                <div className={`w-full min-w-0 xl:w-[450px] xl:shrink-0 ${p.code === "6135" ? "mx-auto max-w-[450px] xl:mx-0" : ""}`}>
+                  <div className={`${p.code === "6135" ? "relative aspect-[45/56] rounded-[28px]" : "h-[420px] sm:h-[500px] xl:h-[560px] rounded-2xl"} overflow-hidden group cursor-zoom-in bg-gray-100`}>
                     <ImageWithFallback
                       src={p.imgs[selected]}
                       alt={name ?? ""}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className={`w-full h-full object-cover transition-transform duration-500 motion-reduce:transition-none motion-safe:group-hover:scale-110 ${p.code === "6135" ? "absolute inset-0" : ""}`}
                     />
                   </div>
                   {/* Mobile thumbnails */}
                   <div className="xl:hidden flex gap-2 overflow-x-auto pb-2 mt-3">
-                    {p.imgs.slice(0, 5).map((img, i) => (
-                      <button key={i} onClick={() => setSelected(i)} style={{ width: 72, height: 84, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
+                    {(p.code === "6135" ? p.imgs : p.imgs.slice(0, 5)).map((img, i) => (
+                      <button key={i} type="button" aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`} aria-pressed={selected === i} className="focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]" onClick={() => setSelected(i)} style={{ width: 72, height: p.code === "6135" ? undefined : 84, aspectRatio: p.code === "6135" ? "26 / 31" : undefined, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
                         <ImageWithFallback src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
@@ -206,15 +208,25 @@ export function ProductPage() {
                 <h1 className="min-w-0 text-base font-black text-gray-900 text-right leading-7" style={F}>
                   {p.name ? p.name : `کد ${p.code}`}
                 </h1>
-                {p.code === "6135" && <div className="flex shrink-0 items-center gap-0 text-black">
+                {p.code === "6135" && <div className="flex shrink-0 flex-col items-end gap-1">
+                  <div className="flex items-center gap-0 text-black">
                   <button type="button" aria-label="افزودن به علاقه‌مندی‌ها" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Heart size={20} /></button>
                   <button type="button" aria-label="ذخیره محصول" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Bookmark size={20} /></button>
                   <button type="button" aria-label="اطلاع‌رسانی محصول" className="flex size-8 items-center justify-center rounded-lg hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"><Bell size={20} /></button>
+                  </div>
                 </div>}
               </div>
+              {p.code === "6135" && (
+                  <div className="mb-3 flex self-end items-center gap-2 whitespace-nowrap text-base font-semibold text-gray-800" style={F} aria-label="۱ نظر، امتیاز ۴، ۱ خریدار">
+                    <span>۱ نظر</span>
+                    <span aria-hidden="true">|</span>
+                    <span className="inline-flex items-center gap-1"><Star size={13} fill="#FACC15" stroke="#FACC15" aria-hidden="true" />۴</span>
+                    <span>(۱ خریدار)</span>
+                  </div>
+              )}
 
               {/* Specs + status */}
-              <div className={`flex flex-col gap-2 mb-5 ${p.code === "6135" ? "xl:mb-2.5" : ""}`} style={F}>
+              <div className={`flex flex-col gap-2 mb-5 ${p.code === "6135" ? "pr-3 sm:pr-0 xl:mb-2.5" : ""}`} style={F}>
                 {([
                   { label: "برند",            value: p.brand ?? "کنسرسیوم" },
                   ...(p.category ? [{ label: "دسته بندی", value: p.category }] : []),
@@ -234,7 +246,7 @@ export function ProductPage() {
                   >
                     {p.code === "6135" ? (
                       <>
-                        <span className="text-gray-500">{label}:</span>
+                        <span className="text-sm text-gray-500 sm:text-base">{label}:</span>
                         <span className="text-gray-800 font-semibold">{value}</span>
                       </>
                     ) : (
@@ -246,7 +258,7 @@ export function ProductPage() {
                   </div>
                 ))}
                 {/* Status row */}
-                {p.code === "6135" && <div className="mt-2"><ProductOfferBenefits /></div>}
+                {p.code === "6135" && <div className="mt-2 self-end text-left sm:self-auto sm:text-right"><ProductOfferBenefits /></div>}
                 {p.code !== "6135" && (
                   <div dir="rtl" className="flex items-center justify-end gap-2 text-sm">
                     <span style={{ color: p.outOfStock ? "#CA165C" : "#16a34a", fontWeight: 600 }}>
@@ -371,8 +383,8 @@ function ProductMeta({ name, code, album, color }: { name: string; code: string;
 
         {guarantees.map(({ icon, label }) => (
           <div key={label} className="flex flex-col items-center gap-3 text-center">
-            <div className={code === "6135" ? "text-inherit" : "text-gray-700"}>{icon}</div>
-            <span className={code === "6135" ? "text-base font-normal text-gray-500" : "text-sm font-medium text-gray-700"} style={F}>{label}</span>
+            <div className={code === "6135" ? "text-inherit [&>svg]:size-6 sm:[&>svg]:size-9" : "text-gray-700"}>{icon}</div>
+            <span className={code === "6135" ? "text-sm font-normal text-gray-500 sm:text-base" : "text-sm font-medium text-gray-700"} style={F}>{label}</span>
           </div>
         ))}
       </div>

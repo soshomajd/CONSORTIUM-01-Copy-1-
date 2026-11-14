@@ -37,6 +37,7 @@ export function FestivalProductCard({
   hasIncentive = false,
   fluid = false,
   showDiscount = true,
+  unavailable = false,
 }: {
   item: {
     code: string
@@ -48,6 +49,7 @@ export function FestivalProductCard({
   hasIncentive?: boolean
   fluid?: boolean
   showDiscount?: boolean
+  unavailable?: boolean
 }) {
   const afterPrice = Math.round(item.basePrice * (1 - item.discount / 100))
 
@@ -199,12 +201,14 @@ export function FestivalProductCard({
           <span
             style={{
               fontSize: amazingTypography ? 13 : 14,
-              fontWeight: amazingTypography ? 800 : 900,
-              color: "#9ca3af",
+              fontWeight: unavailable ? 600 : amazingTypography ? 800 : 900,
+              color: unavailable ? PINK : "#9ca3af",
               ...F,
             }}
           >
-            {toPersianNum(showDiscount ? afterPrice : item.basePrice)} تومان
+            {unavailable
+              ? "ناموجود"
+              : `${toPersianNum(showDiscount ? afterPrice : item.basePrice)} تومان`}
           </span>
         </div>
 

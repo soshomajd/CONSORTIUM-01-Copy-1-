@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type * as React from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import {
   User, ShoppingBag, Bell, Star, Zap, CornerUpLeft, List,
   CreditCard, Wallet, LogOut, Search, CheckCircle2,
@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { addToCart } from "@/app/lib/cart";
-import { Header } from "@/app/components/Header";
 import { clearUser, getUser } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
@@ -288,8 +287,8 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
             ];
             const activeStep = order.tab === "delivered" ? 5 : order.tab === "review" ? 2 : 2;
             return (
-              <div className="w-full overflow-x-auto overscroll-x-contain pb-2" style={{ margin: "21px 0 16px" }}>
-                <div className="flex min-w-max items-start sm:justify-end" style={{ gap: 0 }}>
+              <div className="w-full min-w-0 pb-2" style={{ margin: "21px 0 16px" }}>
+                <div className="flex w-full items-start sm:mr-auto sm:max-w-[480px]" style={{ gap: 0 }}>
                   {steps.map(({ label, Icon }, i) => {
                     const stepNum = i + 1;
                     const done = stepNum < activeStep;
@@ -297,9 +296,9 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
                     const future = stepNum > activeStep;
                     const iconColor = future ? "#d1d5db" : PURPLE;
                     return (
-                      <div key={i} className="flex items-center">
-                        <div className="flex flex-col items-center gap-1.5" style={{ width: 56 }}>
-                          <div className="flex items-center justify-center rounded-xl transition-all"
+                      <div key={i} className="relative min-w-0 flex-1">
+                        <div className="relative z-10 flex w-full flex-col items-center gap-1.5">
+                          <div className="flex shrink-0 items-center justify-center rounded-xl transition-all"
                             style={{
                               width: 36, height: 36,
                               backgroundColor: active
@@ -311,12 +310,12 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
                             }}>
                             <Icon size={16} strokeWidth={future ? 1.8 : 2.2} color={iconColor} />
                           </div>
-                          <span style={{ fontSize: 11, fontWeight: 300, color: future ? "#d1d5db" : PURPLE, whiteSpace: "nowrap", ...F }}>
+                          <span className="w-full px-0.5 text-center leading-[18px]" style={{ fontSize: 11, fontWeight: 300, color: future ? "#d1d5db" : PURPLE, ...F }}>
                             {label}
                           </span>
                         </div>
                         {i < steps.length - 1 && (
-                          <div style={{ width: 24, height: 2, marginBottom: 18, flexShrink: 0, backgroundColor: "rgba(55, 0, 128, 0.06)", borderRadius: 2 }} />
+                          <div aria-hidden="true" style={{ position: "absolute", top: 18, left: "calc(-50% + 18px)", width: "calc(100% - 36px)", height: 2, backgroundColor: "rgba(55, 0, 128, 0.06)", borderRadius: 2 }} />
                         )}
                       </div>
                     );
@@ -404,9 +403,9 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
       <div className="h-px bg-gray-100 mb-5" />
       <div className="flex items-center border border-gray-300 rounded-xl px-4 py-3 gap-2 mb-6 bg-white">
         <Search size={16} className="text-gray-400 shrink-0" />
-        <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="flex-1 bg-transparent text-xs font-normal text-gray-400 outline-none text-right placeholder:text-gray-400 sm:text-sm" style={F} />
+        <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="min-w-0 flex-1 bg-transparent text-xs font-normal text-gray-400 outline-none text-right placeholder:text-gray-400 sm:text-sm" style={F} />
       </div>
-      <div className="mb-6 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+      <div className="mb-6 flex flex-wrap items-center justify-start gap-1.5 sm:gap-2">
         {orderTabs.map(({ key, label, count }) => (
           <button key={key} onClick={() => { setActiveTab(key); setPage(1); }}
             className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-sm font-semibold transition-all sm:gap-1.5 sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
@@ -3585,7 +3584,12 @@ function SingleRollSaleSection() {
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [active, setActive] = useState("profile");
+  useEffect(() => {
+    const section = new URLSearchParams(location.search).get("section");
+    if (section && menuItems.some(item => item.key === section)) setActive(section);
+  }, [location.search]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -3655,38 +3659,9 @@ export function ProfilePage() {
         to   { transform: scaleY(1); opacity: 1; }
       }
     `}</style>
-      <Header />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-10">
 
-        {/* ── Mobile: top bar with menu toggle ── */}
-        <div className="sticky top-16 z-30 mb-4 flex min-h-14 items-center justify-between gap-3 bg-white/95 py-2 backdrop-blur-sm lg:hidden">
-          {(() => {
-            const activeItem = menuItems.find(m => m.key === active);
-            const ActiveIcon = activeItem?.icon ?? User;
-            return (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: PURPLE + "12" }}>
-                  <ActiveIcon size={15} style={{ color: PURPLE }} />
-                </div>
-                <span className="text-sm font-black text-gray-900" style={F}>
-                  {active === "salesdb" ? "پنل فروشگاه" : (activeItem?.label ?? "")}
-                </span>
-              </div>
-            );
-          })()}
-          <button
-            ref={mobileMenuButtonRef}
-            aria-expanded={sidebarOpen}
-            aria-controls="profile-mobile-menu"
-            onClick={() => setSidebarOpen(o => !o)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-3 text-sm font-bold transition-colors"
-            style={{ backgroundColor: sidebarOpen ? PURPLE : "#f3f4f6", color: sidebarOpen ? "#fff" : "#374151", ...F }}
-          >
-            {sidebarOpen ? <X size={15} /> : <Menu size={15} />}
-            {sidebarOpen ? "بستن" : "منو"}
-          </button>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-10">
 
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent id="profile-mobile-menu" side="right" dir="rtl"
@@ -3725,14 +3700,14 @@ export function ProfilePage() {
         <div className="flex gap-5 items-start">
 
           {/* ── RIGHT: sidebar — desktop only ── */}
-          <div className="hidden w-[231px] shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white py-1 shadow-sm lg:block xl:w-[249px]">
+          <div className="hidden w-[260px] shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white py-1 shadow-sm lg:block xl:w-[280px]">
             {menuItems.map(({ key, label, icon: Icon, color, group }, idx) => {
               const prevGroup = idx > 0 ? menuItems[idx - 1].group : null;
               const showHeader = group && group !== prevGroup;
               return (
                 <div key={key}>
                   <button data-profile-menu={key} onClick={() => handleMenu(key)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors border-b border-gray-100 last:border-0 hover:bg-[#FCFCFD]/60 ${active === key && key !== "logout" ? "bg-white text-[#1E2939] font-bold" : "text-gray-700 bg-white"}`}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-base font-medium transition-colors border-b border-gray-100 last:border-0 hover:bg-[#FCFCFD]/60 ${active === key && key !== "logout" ? "bg-white text-[#1E2939]" : "text-gray-700 bg-white"}`}
                     style={{ color: key === "logout" ? "#CA165C" : undefined, ...F }}>
                     <Icon size={16} className="shrink-0" color={key === "logout" ? "#CA165C" : "#9ca3af"} />
                     <span className="flex-1 text-right">{key === "salesdb" ? "پنل فروشگاه" : label}</span>

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import brandNext from "@/imports/Brand-Next.png";
 import brandWallMaster from "@/imports/Brand-WallMaster.png";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
@@ -50,7 +49,7 @@ export function BrandPage() {
   if (!brand) {
     return (
       <div dir="rtl" className="min-h-screen bg-white flex flex-col items-center justify-center" style={F}>
-        <Header />
+
         <p className="text-gray-500 mt-20">برند یافت نشد</p>
         <button onClick={() => navigate("/")} className="mt-4 text-[#3d1a6e] underline text-sm" style={F}>بازگشت</button>
       </div>
@@ -59,7 +58,7 @@ export function BrandPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 

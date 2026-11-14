@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { X } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { getCart, saveCart, CartItem } from "@/app/store/cart";
@@ -29,7 +28,7 @@ export function CartPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 

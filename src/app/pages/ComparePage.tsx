@@ -1,6 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
 import { Columns2, Plus, Search, ShoppingCart, Star, X } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -241,7 +240,7 @@ export function ComparePage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <main className="mx-auto w-full max-w-[1380px] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-5">

@@ -5,10 +5,16 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
+  X,
 } from "lucide-react"
-import { Header } from "@/app/components/Header"
 import { Checkbox } from "@/app/components/ui/checkbox"
 import { FestivalProductCard } from "@/app/components/FestivalProductCard"
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from "@/app/components/ui/sheet"
 
 const PINK = "#CA165C"
 const F = { fontFamily: "'Vazirmatn', sans-serif" }
@@ -86,6 +92,15 @@ export function ProductCatalogPage({
   const [selectedFilters, setSelectedFilters] =
     useState<Record<string, string[]>>({})
   const [page, setPage] = useState(1)
+  const [mobilePanel, setMobilePanel] = useState<string | null>(null)
+  const mobileFilters = [
+    ...FILTER_SECTIONS,
+    {
+      key: "brand",
+      title: "برند",
+      options: ["نکست", "اکستریم والز", "وال‌مستر", "فاین دکور"],
+    },
+  ]
   const totalPages = Math.ceil(DISC_PRODUCTS.length / PAGE_SIZE)
   const [secs, setSecs] = useState(4 * 3600 + 21 * 60 + 33)
 
@@ -114,20 +129,211 @@ export function ProductCatalogPage({
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
-
       <section
         className="flex justify-center px-4 pt-10 pb-16 sm:px-6"
         dir="rtl"
         aria-label={discounted ? "فهرست کالاهای تخفیف‌دار" : "فهرست محصولات"}
       >
         <div style={{ maxWidth: 1380, width: "100%" }}>
+          {!discounted && (
+            <>
+              <div
+                className="mb-4 flex gap-2 overflow-x-auto lg:hidden [scrollbar-width:none]"
+                aria-label="فیلتر و ترتیب محصولات"
+              >
+                {[
+                  { key: "sort", title: "ترتیب" },
+                  { key: "filters", title: "فیلترها" },
+                  ...["album", "color", "brand"].map(
+                    (key) =>
+                      mobileFilters.find((filter) => filter.key === key)!,
+                  ),
+                ].map((chip) => {
+                  const count = selectedFilters[chip.key]?.length ?? 0
+                  return (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      onClick={() => setMobilePanel(chip.key)}
+                      aria-haspopup="dialog"
+                      aria-expanded={mobilePanel === chip.key}
+                      className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-[#CA165C]"
+                    >
+                      <span
+                        className={`flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-light ${
+                          count
+                            ? "border-[#CA165C] text-[#CA165C]"
+                            : "border-gray-300 text-gray-800"
+                        }`}
+                      >
+                        {chip.key === "sort" ? (
+                          <SlidersHorizontal
+                            size={12}
+                            className="text-gray-400"
+                          />
+                        ) : null}
+                        {chip.key === "filters" ? (
+                          <SlidersHorizontal size={12} />
+                        ) : null}
+                        {chip.title}
+                        {count ? ` (${toPersianNum(count)})` : ""}
+                        {!["sort", "filters"].includes(chip.key) && (
+                          <ChevronDown size={12} className="text-gray-400" />
+                        )}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <Sheet
+                open={mobilePanel !== null}
+                onOpenChange={(open) => {
+                  if (!open) setMobilePanel(null)
+                }}
+              >
+                <SheetContent
+                  side="right"
+                  dir="rtl"
+                  className="w-[min(90vw,380px)] gap-0 overflow-y-auto rounded-l-3xl bg-white px-5 pt-6 pb-8 [&>button]:left-4 [&>button]:right-auto"
+                  style={F}
+                >
+                  <SheetTitle className="mb-1 text-right text-base font-semibold text-gray-900">
+                    {mobilePanel === "sort"
+                      ? "ترتیب نمایش"
+                      : mobilePanel === "filters"
+                        ? "فیلترها"
+                        : mobileFilters.find(
+                            (filter) => filter.key === mobilePanel,
+                          )?.title}
+                  </SheetTitle>
+                  <SheetDescription className="mb-5 text-right text-xs text-gray-500">
+                    {mobilePanel === "sort"
+                      ? "ترتیب نمایش محصولات را انتخاب کنید."
+                      : "گزینه‌های موردنظر خود را انتخاب کنید."}
+                  </SheetDescription>
+                  {mobilePanel === "sort" ? (
+                    <div role="group" aria-label="ترتیب نمایش محصولات">
+                      {SORT_OPTIONS.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          aria-pressed={sort === option}
+                          onClick={() => {
+                            setSort(option)
+                            setMobilePanel(null)
+                          }}
+                          className={`flex min-h-12 w-full cursor-pointer items-center justify-between border-b border-gray-100 text-right text-sm ${
+                            sort === option
+                              ? "font-semibold text-[#CA165C]"
+                              : "font-light text-gray-800"
+                          }`}
+                        >
+                          {option}
+                          <span
+                            aria-hidden="true"
+                            className={`size-4 rounded-full border ${
+                              sort === option
+                                ? "border-[5px] border-[#CA165C]"
+                                : "border-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      {mobilePanel === "filters" && (
+                        <label className="mb-3 flex min-h-12 items-center justify-between border-b border-gray-100 text-sm text-gray-800">
+                          فقط کالاهای موجود
+                          <Checkbox
+                            checked={onlyAvailable}
+                            onCheckedChange={(checked) =>
+                              setOnlyAvailable(checked === true)
+                            }
+                            className={filterCheckboxStyle}
+                          />
+                        </label>
+                      )}
+                      {mobileFilters
+                        .filter(
+                          (filter) =>
+                            mobilePanel === "filters" ||
+                            filter.key === mobilePanel,
+                        )
+                        .map((filter) => (
+                          <div
+                            key={filter.key}
+                            className="border-b border-gray-100 last:border-0"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleFilter(filter.key)}
+                              aria-expanded={
+                                mobilePanel !== "filters" ||
+                                !!openFilters[filter.key]
+                              }
+                              className="flex min-h-14 w-full cursor-pointer items-center justify-between text-sm text-gray-800"
+                            >
+                              {filter.title}
+                              <ChevronDown
+                                size={15}
+                                className={
+                                  mobilePanel !== "filters" ||
+                                  openFilters[filter.key]
+                                    ? "rotate-180"
+                                    : ""
+                                }
+                              />
+                            </button>
+                            {(mobilePanel !== "filters" ||
+                              openFilters[filter.key]) && (
+                              <div className="px-3 pb-3">
+                                {filter.options.map((option) => (
+                                  <label
+                                    key={option}
+                                    className="flex min-h-11 cursor-pointer items-center justify-between gap-3 border-b border-gray-50 text-sm font-light text-gray-700 last:border-0"
+                                  >
+                                    {option}
+                                    <Checkbox
+                                      checked={(
+                                        selectedFilters[filter.key] ?? []
+                                      ).includes(option)}
+                                      onCheckedChange={(checked) =>
+                                        selectFilterOption(
+                                          filter.key,
+                                          option,
+                                          checked === true,
+                                        )
+                                      }
+                                      className={filterCheckboxStyle}
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      <button
+                        type="button"
+                        onClick={() => setMobilePanel(null)}
+                        className="mt-6 min-h-11 w-full cursor-pointer rounded-xl bg-[#CA165C] text-sm font-semibold text-white"
+                      >
+                        نمایش محصولات
+                      </button>
+                    </>
+                  )}
+                </SheetContent>
+              </Sheet>
+            </>
+          )}
           {/* Main layout: sidebar + grid */}
           <div className="grid items-start gap-6 lg:grid-cols-[312px_minmax(0,1fr)]">
             {/* Filter sidebar — first in DOM = right side in RTL */}
-            <div className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain">
+            <div className="min-w-0 lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain">
               <aside
-                className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white"
+                className={`${
+                  discounted ? "" : "hidden lg:block"
+                } w-full overflow-hidden rounded-2xl border border-gray-200 bg-white`}
                 aria-label="فیلتر محصولات"
               >
                 <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
@@ -255,7 +461,9 @@ export function ProductCatalogPage({
               <div
                 role="group"
                 aria-label="ترتیب نمایش محصولات"
-                className="mb-5 flex w-full items-center gap-5 overflow-x-auto rounded-xl border border-gray-200 bg-white px-4 py-3"
+                className={`mb-5 ${
+                  discounted ? "flex" : "hidden lg:flex"
+                } w-full items-center gap-5 overflow-x-auto rounded-xl border border-gray-200 bg-white px-4 py-3`}
               >
                 <span
                   className="shrink-0 text-base font-black text-gray-800"
@@ -280,6 +488,56 @@ export function ProductCatalogPage({
                   </button>
                 ))}
               </div>
+              {!discounted &&
+                (onlyAvailable ||
+                  Object.values(selectedFilters).some(
+                    (options) => options.length > 0,
+                  )) && (
+                  <div
+                    className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1"
+                    aria-label="فیلترهای انتخاب‌شده"
+                  >
+                    {Object.entries(selectedFilters).flatMap(([key, options]) =>
+                      options.map((option) => (
+                        <button
+                          key={`${key}-${option}`}
+                          type="button"
+                          onClick={() => selectFilterOption(key, option, false)}
+                          aria-label={`حذف فیلتر ${option}`}
+                          className="flex min-h-11 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]"
+                        >
+                          <span className="flex items-center gap-1.5 rounded-full bg-[#CA165C]/10 px-2.5 py-1 text-xs font-normal text-[#CA165C]">
+                            {option}
+                            <X size={12} aria-hidden="true" />
+                          </span>
+                        </button>
+                      )),
+                    )}
+                    {onlyAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => setOnlyAvailable(false)}
+                        aria-label="حذف فیلتر فقط موجود"
+                        className="flex min-h-11 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]"
+                      >
+                        <span className="flex items-center gap-1.5 rounded-full bg-[#CA165C]/10 px-2.5 py-1 text-xs font-normal text-[#CA165C]">
+                          فقط موجود
+                          <X size={12} aria-hidden="true" />
+                        </span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFilters({})
+                        setOnlyAvailable(false)
+                      }}
+                      className="min-h-11 cursor-pointer rounded-md px-1 text-xs font-light text-[#CA165C] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-[#CA165C]"
+                    >
+                      حذف همه فیلترها
+                    </button>
+                  </div>
+                )}
               <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 xl:grid-cols-5">
                 {DISC_PRODUCTS.slice(
                   (page - 1) * PAGE_SIZE,
@@ -290,6 +548,7 @@ export function ProductCatalogPage({
                     item={item}
                     timer={discounted ? [hh, mm, ss2] : undefined}
                     showDiscount={discounted}
+                    unavailable={!discounted && item.code === "WP-B204"}
                     amazingTypography
                     hasIncentive={discounted}
                     fluid
@@ -314,8 +573,12 @@ export function ProductCatalogPage({
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    border: `1px solid ${PINK}`,
-                    backgroundColor: page === 1 ? "#f9fafb" : "#fff",
+                    border: discounted ? `1px solid ${PINK}` : "none",
+                    backgroundColor: discounted
+                      ? page === 1
+                        ? "#f9fafb"
+                        : "#fff"
+                      : "transparent",
                     cursor: page === 1 ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -341,14 +604,12 @@ export function ProductCatalogPage({
                             ? discounted
                               ? "none"
                               : `1px solid ${PINK}`
-                            : "1px solid #e5e7eb",
-                        backgroundColor:
-                          p === page && discounted ? PINK : "#fff",
-                        color: !discounted
-                          ? PINK
-                          : p === page
-                            ? "#fff"
-                            : "#374151",
+                            : discounted
+                              ? "1px solid #e5e7eb"
+                              : `1px solid ${PINK}`,
+                        backgroundColor: p === page ? PINK : "#fff",
+                        color:
+                          p === page ? "#fff" : discounted ? "#374151" : PINK,
                         fontSize: 14,
                         fontWeight: p === page ? 900 : 400,
                         cursor: "pointer",
@@ -368,8 +629,12 @@ export function ProductCatalogPage({
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    border: `1px solid ${PINK}`,
-                    backgroundColor: page === totalPages ? "#f9fafb" : "#fff",
+                    border: discounted ? `1px solid ${PINK}` : "none",
+                    backgroundColor: discounted
+                      ? page === totalPages
+                        ? "#f9fafb"
+                        : "#fff"
+                      : "transparent",
                     cursor: page === totalPages ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -385,7 +650,6 @@ export function ProductCatalogPage({
           </div>
         </div>
       </section>
-
     </div>
   )
 }

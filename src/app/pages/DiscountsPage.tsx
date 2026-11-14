@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronRight, ChevronLeft, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Link } from "react-router";
-import { Header } from "@/app/components/Header";
 import { FestivalProductCard } from "@/app/components/FestivalProductCard";
 import productImg  from "@/imports/202067-after.jpg";
 
-const PURPLE = "#370080";
+const BLACK = "#000000";
 const PINK   = "#CA165C";
 const F      = { fontFamily: "'Vazirmatn', sans-serif" };
 
@@ -312,7 +311,7 @@ function AmazingOffersCarousel() {
                   textDecoration: "none",
                   color: "inherit",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(55,0,128,0.1)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.1)"; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.05)"; }}
                 >
                   {/* Content (right side in RTL = first in DOM) */}
@@ -336,9 +335,9 @@ function AmazingOffersCarousel() {
                     {/* Progress */}
                     <div style={{ marginTop: 4, width: "100%" }}>
                       <div style={{ height: 4, backgroundColor: "#e5e7eb", borderRadius: 9999, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${item.sold}%`, backgroundColor: PURPLE, borderRadius: 9999, transition: "width 0.6s ease" }} />
+                        <div style={{ height: "100%", width: `${item.sold}%`, backgroundColor: BLACK, borderRadius: 9999, transition: "width 0.6s ease" }} />
                       </div>
-                      <p style={{ margin: "4px 0 0", fontSize: 13, color: PURPLE, ...F }}>{toPersianNum(item.sold)}٪ فروش رفته</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 13, color: BLACK, ...F }}>{toPersianNum(item.sold)}٪ فروش رفته</p>
                     </div>
                     {/* Timer */}
                     <div style={{ display: "flex", alignItems: "center", gap: 3, direction: "ltr", justifyContent: "flex-start", alignSelf: "flex-start" }}>
@@ -364,7 +363,7 @@ function AmazingOffersCarousel() {
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 16 }}>
           {Array.from({ length: maxIdx + 1 }).map((_, i) => (
             <button key={i} onClick={() => setIdx(i)}
-              style={{ width: i === idx ? 20 : 8, height: 8, borderRadius: 9999, border: "none", cursor: "pointer", backgroundColor: i === idx ? PURPLE : "#d1d5db", transition: "all 0.3s", padding: 0 }}
+              style={{ width: i === idx ? 20 : 8, height: 8, borderRadius: 9999, border: "none", cursor: "pointer", backgroundColor: i === idx ? BLACK : "#d1d5db", transition: "all 0.3s", padding: 0 }}
             />
           ))}
         </div>
@@ -1014,7 +1013,7 @@ function DiscountCodeSection() {
 export function DiscountsPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
       <HeroSection />
       <BannerSection />
       <Festival2Section />
