@@ -190,7 +190,7 @@ export function ProductPage() {
 
             {/* ══ LEFTMOST: info panel (last in RTL DOM) ══ */}
             <div
-              className={`w-full flex flex-col min-w-0 text-right ${p.code === "6135" ? "xl:h-[626px] xl:flex-1" : "xl:w-[300px] xl:shrink-0"}`}
+              className={`w-full flex flex-col min-w-0 text-right ${p.code === "6135" ? "xl:relative xl:self-stretch xl:flex-1" : "xl:w-[300px] xl:shrink-0"}`}
               dir="rtl"
               style={p.code === "6135" ? F : undefined}
             >
@@ -226,7 +226,7 @@ export function ProductPage() {
               )}
 
               {/* Specs + status */}
-              <div className={`flex flex-col gap-2 mb-5 ${p.code === "6135" ? "pr-3 sm:pr-0 xl:mb-2.5" : ""}`} style={F}>
+              <div className={`flex flex-col gap-2 mb-5 ${p.code === "6135" ? "pr-3 sm:pr-0 xl:mb-2.5 xl:ml-auto xl:w-[calc(100%-424px)] xl:min-w-[180px]" : ""}`} style={F}>
                 {([
                   { label: "برند",            value: p.brand ?? "کنسرسیوم" },
                   ...(p.category ? [{ label: "دسته بندی", value: p.category }] : []),
@@ -258,7 +258,7 @@ export function ProductPage() {
                   </div>
                 ))}
                 {/* Status row */}
-                {p.code === "6135" && <div className="mt-2 self-end text-left sm:self-auto sm:text-right"><ProductOfferBenefits /></div>}
+                {p.code === "6135" && <div className="mt-2 self-end text-left sm:self-auto sm:text-right xl:pt-2 xl:pr-2"><ProductOfferBenefits compactMobile /></div>}
                 {p.code !== "6135" && (
                   <div dir="rtl" className="flex items-center justify-end gap-2 text-sm">
                     <span style={{ color: p.outOfStock ? "#CA165C" : "#16a34a", fontWeight: 600 }}>
@@ -273,7 +273,7 @@ export function ProductPage() {
               <div
               className={`w-full border border-gray-200 p-5 bg-white ${
                 p.code === "6135"
-                  ? "rounded-[28px] xl:relative xl:-top-20 xl:mt-auto xl:mb-6 xl:max-w-[400px] xl:mr-auto"
+                  ? "rounded-[28px] xl:absolute xl:bottom-0 xl:left-0 xl:max-w-[400px]"
                   : "rounded-2xl"
               }`}
 
