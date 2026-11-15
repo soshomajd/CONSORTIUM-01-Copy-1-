@@ -273,7 +273,7 @@ export function ProductPage() {
               <div
               className={`w-full border border-gray-200 p-5 bg-white ${
                 p.code === "6135"
-                  ? "rounded-[28px] xl:mt-auto xl:mb-6 xl:max-w-[400px] xl:mr-auto"
+                  ? "rounded-[28px] xl:relative xl:-top-20 xl:mt-auto xl:mb-6 xl:max-w-[400px] xl:mr-auto"
                   : "rounded-2xl"
               }`}
 
