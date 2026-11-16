@@ -104,7 +104,7 @@ export function ProductPage() {
           <button onClick={() => navigate("/")} className="mt-4 text-[#3d1a6e] underline" style={F}>بازگشت</button>
         </div>
       ) : (
-        <div className={`min-w-0 max-w-[1380px] mx-auto py-6 pb-16 ${usesDetailedProductLayout(p.code) ? "w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)]" : "w-full px-4 sm:px-6"}`}>
+        <div className={`min-w-0 max-w-[1380px] mx-auto py-6 ${p.code === "6130" ? "pb-4 sm:pb-16" : "pb-16"} ${usesDetailedProductLayout(p.code) ? "w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)]" : "w-full px-4 sm:px-6"}`}>
 
           {/* ── Main layout: [image+thumbnails] | info ── */}
           <div className={`flex flex-col xl:flex-row xl:justify-between gap-6 items-start ${usesDetailedProductLayout(p.code) ? "xl:gap-[30px]" : ""}`}>

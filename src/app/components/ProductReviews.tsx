@@ -317,7 +317,7 @@ export function ProductReviews({
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_375px]">
             <div className="min-w-0 space-y-4">
               {!hasReviews && (
-                <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-gray-200 bg-white px-6 py-10 text-center sm:min-h-[340px] sm:px-10">
+                <div className={`flex flex-col items-center justify-center rounded-3xl border border-gray-200 bg-white px-6 text-center sm:min-h-[340px] sm:px-10 ${code === "6130" ? "min-h-[180px] py-6 sm:py-10" : "min-h-[300px] py-10"}`}>
                   <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-[#370080]/6 text-[#370080]" aria-hidden="true">
                     <MessageSquare size={20} strokeWidth={1.5} />
                   </span>
