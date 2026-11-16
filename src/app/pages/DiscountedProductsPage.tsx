@@ -549,6 +549,9 @@ export function ProductCatalogPage({
                     timer={discounted ? [hh, mm, ss2] : undefined}
                     showDiscount={discounted}
                     unavailable={!discounted && item.code === "WP-B204"}
+                    title={!discounted && item.code === "WP-A101" ? "تکسچر 6130" : undefined}
+                    productHref={!discounted && item.code === "WP-A101" ? "/product/6130" : undefined}
+                    showReviews={discounted || item.code !== "WP-A101"}
                     amazingTypography
                     hasIncentive={discounted}
                     fluid

@@ -131,14 +131,20 @@ export function ProductReviews({
   code,
   album,
   color,
+  startEmpty = false,
+  onReviewAdded,
 }: {
   productName: string
   code: string
   album: string
   color: string
+  startEmpty?: boolean
+  onReviewAdded?: (rating: number) => void
 }) {
   const formId = useId()
-  const [reviews, setReviews] = useState(initialReviews)
+  const [reviews, setReviews] = useState<Review[]>(() =>
+    startEmpty ? [] : initialReviews,
+  )
   const [sort, setSort] = useState<SortOrder>("newest")
   const [votes, setVotes] = useState<Record<string, Vote | undefined>>({})
   const [open, setOpen] = useState(false)
@@ -150,12 +156,17 @@ export function ProductReviews({
   const [error, setError] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
-  const average =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-  const recommendedPercent = Math.round(
-    (reviews.filter((review) => review.recommended).length / reviews.length) *
-      100,
-  )
+  const hasReviews = reviews.length > 0
+  const average = hasReviews
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0
+  const recommendedPercent = hasReviews
+    ? Math.round(
+        (reviews.filter((review) => review.recommended).length /
+          reviews.length) *
+          100,
+      )
+    : 0
   const sortedReviews = useMemo(
     () =>
       [...reviews].sort((a, b) => {
@@ -197,13 +208,14 @@ export function ProductReviews({
         recommended: recommendation === "yes",
         buyer: false,
         date: new Date().toISOString(),
-        order: Math.max(...previous.map((review) => review.order)) + 1,
+        order: Math.max(0, ...previous.map((review) => review.order)) + 1,
         likes: 0,
         dislikes: 0,
       },
       ...previous,
     ])
     setSort("newest")
+    onReviewAdded?.(Number(rating))
     setSubmitted(true)
     setOpen(false)
   }
@@ -225,17 +237,17 @@ export function ProductReviews({
     >
       <Tabs defaultValue="comments" dir="rtl" className="gap-6">
         <div className="w-full border-b border-gray-200 pb-4">
-        <TabsList className="h-auto w-full justify-start gap-2 rounded-none bg-transparent p-0 sm:w-fit">
-          <TabsTrigger value="comments" className={productTabStyle}>
-            نظرات کاربران{" "}
-            <span className="mr-1 rounded-md bg-white/15 px-1.5 py-0.5 text-xs font-bold text-white">
-              {fmt(reviews.length)}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="review" className={productTabStyle}>
-            بررسی محصول
-          </TabsTrigger>
-        </TabsList>
+          <TabsList className="h-auto w-full justify-start gap-2 rounded-none bg-transparent p-0 sm:w-fit">
+            <TabsTrigger value="comments" className={productTabStyle}>
+              نظرات کاربران{" "}
+              <span className="mr-1 rounded-md bg-white/15 px-1.5 py-0.5 text-xs font-bold text-white">
+                {fmt(reviews.length)}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="review" className={productTabStyle}>
+              بررسی محصول
+            </TabsTrigger>
+          </TabsList>
         </div>
 
         <TabsContent
@@ -252,34 +264,40 @@ export function ProductReviews({
         <TabsContent value="comments" className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className={profileText.heading}>از تجربهٔ دیگران بخوانید</h2>
+              <h2 className={profileText.heading}>
+                {hasReviews
+                  ? "از تجربهٔ دیگران بخوانید"
+                  : "اولین تجربه را شما بنویسید"}
+              </h2>
             </div>
-            <div
-              className="flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl p-1.5"
-              role="group"
-              aria-label="مرتب‌سازی نظرات"
-            >
-              {([
-                { id: "newest", label: "جدیدترین" },
-                { id: "oldest", label: "قدیمی‌ترین" },
-                { id: "popular", label: "محبوب‌ترین" },
-              ] as const).map((option) => (
-                <Button
-                  key={option.id}
-                  variant="ghost"
-                  type="button"
-                  aria-pressed={sort === option.id}
-                  onClick={() => setSort(option.id)}
-                  className={`min-h-11 rounded-xl border px-3 text-sm font-semibold shadow-none transition-colors ${focusRing} ${
-                    sort === option.id
-                      ? "border-[#CA165C] bg-white text-[#CA165C] hover:bg-gray-50 hover:text-[#CA165C]"
-                      : "border-transparent bg-[#370080]/20 text-[#370080] hover:bg-[#370080]/25 hover:text-[#370080]"
-                  }`}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+            {hasReviews && (
+              <div
+                className="flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl p-1.5"
+                role="group"
+                aria-label="مرتب‌سازی نظرات"
+              >
+                {([
+                  { id: "newest", label: "جدیدترین" },
+                  { id: "oldest", label: "قدیمی‌ترین" },
+                  { id: "popular", label: "محبوب‌ترین" },
+                ] as const).map((option) => (
+                  <Button
+                    key={option.id}
+                    variant="ghost"
+                    type="button"
+                    aria-pressed={sort === option.id}
+                    onClick={() => setSort(option.id)}
+                    className={`min-h-11 rounded-xl border px-3 text-sm font-semibold shadow-none transition-colors ${focusRing} ${
+                      sort === option.id
+                        ? "border-[#CA165C] bg-white text-[#CA165C] hover:bg-gray-50 hover:text-[#CA165C]"
+                        : "border-transparent bg-[#370080]/20 text-[#370080] hover:bg-[#370080]/25 hover:text-[#370080]"
+                    }`}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
 
           {submitted && (
@@ -298,6 +316,16 @@ export function ProductReviews({
 
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_375px]">
             <div className="min-w-0 space-y-4">
+              {!hasReviews && (
+                <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-gray-200 bg-white px-6 py-10 text-center sm:min-h-[340px] sm:px-10">
+                  <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-[#370080]/6 text-[#370080]" aria-hidden="true">
+                    <MessageSquare size={20} strokeWidth={1.5} />
+                  </span>
+                  <h3 className="text-sm font-normal leading-7 text-[#6A7282]">
+                    هنوز دیدگاهی برای این محصول ثبت نشده است.
+                  </h3>
+                </div>
+              )}
               {sortedReviews.map((review) => (
                 <article
                   key={review.id}
@@ -339,9 +367,7 @@ export function ProductReviews({
                   <h3 className="mt-5 text-base font-semibold leading-7 text-[#1E2939]">
                     {review.title}
                   </h3>
-                  <p
-                    className="mt-1 whitespace-pre-wrap break-words text-[15px] font-normal leading-7 text-[#6A7282]"
-                  >
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-normal leading-7 text-[#6A7282]">
                     {review.body}
                   </p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
@@ -405,60 +431,68 @@ export function ProductReviews({
               aria-label="امتیاز محصول و ثبت نظر"
             >
               <p className="text-base font-semibold text-[#1E2939]">
-                امتیاز کاربران به این محصول
+                {hasReviews ? "امتیاز کاربران به این محصول" : "هنوز امتیازی ثبت نشده است"}
               </p>
-              <div className="mt-5 flex flex-wrap items-end gap-2">
-                <strong className="text-[56px] font-black leading-none text-gray-900">
-                  {average.toLocaleString("fa-IR", {
-                    maximumFractionDigits: 1,
-                  })}
-                </strong>
-                <span className="pb-1 text-sm font-normal text-[#6A7282]">
-                  از ۵ امتیاز - {fmt(reviews.length)} دیدگاه
-                </span>
-              </div>
-              <div
-                className="mt-6 mr-auto ml-0 w-3/4 space-y-2.5"
-                aria-label="توزیع امتیازها"
-              >
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const count = reviews.filter(
-                    (review) => review.rating === star,
-                  ).length
-                  return (
-                    <div
-                      key={star}
-                      className="flex items-center gap-2.5 text-sm font-normal text-[#6A7282]"
-                      aria-label={`${fmt(star)} ستاره: ${fmt(count)} نظر`}
-                    >
-                      <span className="w-3 text-center">{fmt(star)}</span>
-                      <div
-                        dir="ltr"
-                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F4F4F6]"
-                      >
+              {hasReviews ? (
+                <>
+                  <div className="mt-5 flex flex-wrap items-end gap-2">
+                    <strong className="text-[56px] font-black leading-none text-gray-900">
+                      {average.toLocaleString("fa-IR", {
+                        maximumFractionDigits: 1,
+                      })}
+                    </strong>
+                    <span className="pb-1 text-sm font-normal text-[#6A7282]">
+                      از ۵ امتیاز - {fmt(reviews.length)} دیدگاه
+                    </span>
+                  </div>
+                  <div
+                    className="mt-6 mr-auto ml-0 w-3/4 space-y-2.5"
+                    aria-label="توزیع امتیازها"
+                  >
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = reviews.filter(
+                        (review) => review.rating === star,
+                      ).length
+                      return (
                         <div
-                          className="h-full rounded-full bg-[#370080] transition-[width] duration-500 motion-reduce:transition-none"
-                          style={{
-                            width: `${(count / reviews.length) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <p className={`mt-5 flex items-start gap-2 ${reviewBodyStyle}`}>
-                <ThumbsUp
-                  size={15}
-                  className="mt-1 shrink-0 text-[#370080]"
-                  aria-hidden="true"
-                />
-                {fmt(recommendedPercent)}٪ کاربران، خرید این محصول را پیشنهاد
-                کرده‌اند.
-              </p>
+                          key={star}
+                          className="flex items-center gap-2.5 text-sm font-normal text-[#6A7282]"
+                          aria-label={`${fmt(star)} ستاره: ${fmt(count)} نظر`}
+                        >
+                          <span className="w-3 text-center">{fmt(star)}</span>
+                          <div
+                            dir="ltr"
+                            className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F4F4F6]"
+                          >
+                            <div
+                              className="h-full rounded-full bg-[#370080] transition-[width] duration-500 motion-reduce:transition-none"
+                              style={{
+                                width: `${(count / reviews.length) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p
+                    className={`mt-5 flex items-start gap-2 ${reviewBodyStyle}`}
+                  >
+                    <ThumbsUp
+                      size={15}
+                      className="mt-1 shrink-0 text-[#370080]"
+                      aria-hidden="true"
+                    />
+                    {fmt(recommendedPercent)}٪ کاربران، خرید این محصول را
+                    پیشنهاد کرده‌اند.
+                  </p>
+                </>
+              ) : null}
               <div className="mt-6 border-t border-gray-200 pt-5">
                 <p className="text-base font-semibold text-[#1E2939]">
-                  نظر شما برای ما ارزشمنده!
+                  {hasReviews
+                    ? "نظر شما برای ما ارزشمنده!"
+                    : "اولین نظر را شما ثبت کنید!"}
                 </p>
                 <p className="mt-1 text-sm font-normal leading-7 text-[#6A7282]">
                   از کیفیت، رنگ و تجربهٔ خریدتان بگویید.
@@ -469,7 +503,7 @@ export function ProductReviews({
                   className={`mt-4 min-h-12 w-full gap-2 rounded-xl border border-[#CA165C] bg-[#CA165C] text-base font-medium text-white shadow-none hover:bg-[#CA165C] ${focusRing}`}
                 >
                   <Plus size={18} aria-hidden="true" />
-                  ثبت نظر
+                  {hasReviews ? "ثبت نظر" : "ثبت اولین نظر"}
                 </Button>
               </div>
             </aside>

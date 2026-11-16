@@ -38,6 +38,9 @@ export function FestivalProductCard({
   fluid = false,
   showDiscount = true,
   unavailable = false,
+  title = "تکسچر(1) 202011",
+  productHref = "/product/6135",
+  showReviews = true,
 }: {
   item: {
     code: string
@@ -50,12 +53,15 @@ export function FestivalProductCard({
   fluid?: boolean
   showDiscount?: boolean
   unavailable?: boolean
+  title?: string
+  productHref?: string
+  showReviews?: boolean
 }) {
   const afterPrice = Math.round(item.basePrice * (1 - item.discount / 100))
 
   return (
     <Link
-      to="/product/6135"
+      to={productHref}
       data-product-code={item.code}
       className="min-w-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-[3px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#CA165C]"
       style={{
@@ -98,7 +104,7 @@ export function FestivalProductCard({
             pointerEvents: "none",
           }}
         />
-        <span
+        {showReviews && <span
           style={{
             position: "absolute",
             bottom: 9,
@@ -112,7 +118,7 @@ export function FestivalProductCard({
           }}
         >
           <span style={{ color: "#fbbf24" }}>★</span> 4/2 ( 15 دیدگاه )
-        </span>
+        </span>}
         {showDiscount && (
           <div
             style={{
@@ -172,7 +178,7 @@ export function FestivalProductCard({
               ...F,
             }}
           >
-            تکسچر(1) 202011
+            {title}
           </p>
         </div>
 
