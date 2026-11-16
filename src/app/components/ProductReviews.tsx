@@ -15,6 +15,8 @@ import { Checkbox } from "./ui/checkbox"
 import {
   Dialog,
   DialogClose,
+  DialogContent,
+  DialogDescription,
   DialogOverlay,
   DialogPortal,
   DialogTitle,
@@ -23,6 +25,7 @@ import { Input } from "./ui/input"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Textarea } from "./ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 type Review = {
   id: string
@@ -91,7 +94,7 @@ const profileText = {
   heading: "text-base font-black text-gray-900 sm:text-xl",
   title: "text-sm font-semibold text-[#1E2939]",
   detail: "text-[13px] font-normal text-[#6A7282]",
-  label: "block text-sm font-semibold leading-6 text-[#1E2939]",
+  label: "block text-[15px] font-semibold leading-6 text-[#1E2939]",
 }
 const inputStyle =
   "rounded-xl border-gray-200 bg-[#FCFCFD]/50 text-right text-sm font-light text-[#6A7282] shadow-none placeholder:text-gray-400 focus-visible:border-gray-200 focus-visible:bg-[#F4F4F6] focus-visible:ring-0 md:text-sm"
@@ -154,7 +157,13 @@ export function ProductReviews({
   const [recommendation, setRecommendation] = useState("")
   const [anonymous, setAnonymous] = useState(false)
   const [error, setError] = useState("")
+  const [validationAttempted, setValidationAttempted] = useState(false)
+  const [focusedField, setFocusedField] = useState<"title" | "body" | null>(null)
+  const titleMissing = validationAttempted && !title.trim()
+  const bodyMissing = validationAttempted && !body.trim()
+  const fieldTooltipStyle = "z-[60] max-w-[calc(100vw-3rem)] rounded-xl border border-gray-100 bg-white px-3 py-2 text-[15px] font-normal leading-6 text-[#CA165C] shadow-[0_4px_18px_rgba(0,0,0,0.08)] duration-200 ease-out motion-reduce:animate-none [&_svg]:bg-white [&_svg]:fill-white"
   const [submitted, setSubmitted] = useState(false)
+  const waitsForApproval = code === "6130" || code === "6135"
 
   const hasReviews = reviews.length > 0
   const average = hasReviews
@@ -189,13 +198,28 @@ export function ProductReviews({
     setRecommendation("")
     setAnonymous(false)
     setError("")
+    setValidationAttempted(false)
+    setFocusedField(null)
     setOpen(true)
   }
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!title.trim() || !body.trim() || !rating || !recommendation) {
-      setError("عنوان، متن نظر، امتیاز و پیشنهاد خرید را کامل کنید.")
+    setValidationAttempted(true)
+    if (!title.trim() || !body.trim()) {
+      setError("")
+      const missing = !title.trim() ? "title" : "body"
+      setFocusedField(missing)
+      document.getElementById(`${formId}-${missing}`)?.focus()
+      return
+    }
+    if (!rating || !recommendation) {
+      setError("لطفا امتیاز و پیشنهاد خرید را مشخص کنید.")
+      return
+    }
+    if (waitsForApproval) {
+      setOpen(false)
+      setSubmitted(true)
       return
     }
     setReviews((previous) => [
@@ -230,7 +254,7 @@ export function ProductReviews({
   return (
     <section
       id="product-reviews"
-      className="mt-8 text-sm font-light text-[#6A7282]"
+      className="mt-8 min-w-0 scroll-mt-[calc(var(--storefront-header-height,121px)+16px)] text-sm font-light text-[#6A7282]"
       style={{ fontFamily: "'Vazirmatn', sans-serif" }}
       dir="rtl"
       aria-label="بررسی و نظرات محصول"
@@ -250,16 +274,7 @@ export function ProductReviews({
           </TabsList>
         </div>
 
-        <TabsContent
-          value="review"
-          className="rounded-3xl border border-gray-200 bg-[#FCFCFD]/50 p-6 sm:p-8"
-        >
-          <h2 className={profileText.heading}>{productName}</h2>
-          <p className={`mt-4 max-w-3xl leading-8 ${profileText.detail}`}>
-            کاغذ دیواری آلبوم {album}، کد {code}، با رنگ {color}. برای انتخاب
-            بهتر، نمونهٔ رنگ محصول را در نور فضای خود بررسی کنید.
-          </p>
-        </TabsContent>
+        <TabsContent value="review" className="m-0" />
 
         <TabsContent value="comments" className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -300,7 +315,7 @@ export function ProductReviews({
             )}
           </div>
 
-          {submitted && (
+          {submitted && !waitsForApproval && (
             <p
               role="status"
               className={`flex items-center gap-2 rounded-2xl border border-gray-200 bg-[#FCFCFD]/50 px-4 py-3 leading-7 ${profileText.detail}`}
@@ -427,9 +442,10 @@ export function ProductReviews({
             </div>
 
             <aside
-              className="order-first rounded-3xl border border-gray-200 bg-white p-6 lg:order-none lg:sticky lg:top-24"
+              className="order-first min-w-0 rounded-3xl border border-gray-200 bg-white p-5 sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6 lg:order-none lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] lg:block"
               aria-label="امتیاز محصول و ثبت نظر"
             >
+              <div className="min-w-0">
               <p className="text-base font-semibold text-[#1E2939]">
                 {hasReviews ? "امتیاز کاربران به این محصول" : "هنوز امتیازی ثبت نشده است"}
               </p>
@@ -488,14 +504,15 @@ export function ProductReviews({
                   </p>
                 </>
               ) : null}
-              <div className="mt-6 border-t border-gray-200 pt-5">
+              </div>
+              <div className="mt-6 border-t border-gray-200 pt-5 sm:mt-0 sm:self-center sm:border-t-0 sm:border-r sm:pr-6 sm:pt-0 lg:mt-6 lg:border-t lg:border-r-0 lg:pr-0 lg:pt-5">
                 <p className="text-base font-semibold text-[#1E2939]">
                   {hasReviews
                     ? "نظر شما برای ما ارزشمنده!"
                     : "اولین نظر را شما ثبت کنید!"}
                 </p>
                 <p className="mt-1 text-sm font-normal leading-7 text-[#6A7282]">
-                  از کیفیت، رنگ و تجربهٔ خریدتان بگویید.
+                 نظراتان درباره این کالا را بنویسید.
                 </p>
                 <Button
                   type="button"
@@ -532,13 +549,13 @@ export function ProductReviews({
                   variant="ghost"
                   size="icon"
                   aria-label="بستن فرم ثبت نظر"
-                  className="size-11 shrink-0 rounded-xl bg-transparent text-[#CA165C] hover:bg-transparent hover:text-[#CA165C] focus-visible:ring-2 focus-visible:ring-[#CA165C]/40 focus-visible:ring-offset-2"
+                  className="size-11 shrink-0 rounded-xl bg-transparent text-[#CA165C] hover:bg-transparent hover:text-[#CA165C] focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 >
                   <X size={24} className="size-6" />
                 </Button>
               </DialogClose>
             </div>
-            <form onSubmit={submitReview} className="mt-3 space-y-5">
+            <form noValidate onSubmit={submitReview} className="mt-3 space-y-5">
               <div className="space-y-2">
                 <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-light leading-7 text-gray-400">
                   <Checkbox
@@ -546,7 +563,7 @@ export function ProductReviews({
                     onCheckedChange={(checked) =>
                       setAnonymous(checked === true)
                     }
-                    className="size-5 rounded-md border-gray-200 data-[state=checked]:border-[#370080] data-[state=checked]:bg-[#370080] focus-visible:ring-[#370080]/20"
+                    className="size-5 rounded-md border-gray-200 data-[state=checked]:border-[#ca165c] data-[state=checked]:bg-[#ca165c] focus-visible:ring-[#ca165c]/20"
                   />
                   ارسال نظر به‌صورت ناشناس
                 </label>
@@ -556,38 +573,63 @@ export function ProductReviews({
                     className={profileText.label}
                   >
                     عنوان نظر{" "}
-                    <span className="text-[13px] font-normal text-[#1E2939]">
+                    <span className={`text-[13px] font-normal ${title.trim() ? "text-[#1E2939]" : "text-[#1E2939]"}`}>
                       (الزامی)
                     </span>
                   </label>
+                  <Tooltip open={titleMissing && focusedField === "title"} onOpenChange={next => { if (!next) setFocusedField(null) }}>
+                  <TooltipTrigger asChild>
+                  <span className="block">
                   <Input
                     id={`${formId}-title`}
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
+                    onFocus={() => setFocusedField("title")}
+                    onBlur={() => setFocusedField(null)}
+                    aria-invalid={titleMissing}
+                    aria-describedby={titleMissing && focusedField === "title" ? `${formId}-title-tooltip` : undefined}
                     maxLength={100}
                     required
-                    placeholder="تجربه‌تان را در یک جمله بگویید"
                     className={`h-12 px-4 ${inputStyle}`}
                   />
+                  </span>
+                  </TooltipTrigger>
+                  <TooltipContent id={`${formId}-title-tooltip`} side="bottom" align="end" sideOffset={6} collisionPadding={12} className={fieldTooltipStyle} style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+                    لطفا عنوان نظر را وارد کنید.
+                  </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor={`${formId}-body`} className={profileText.label}>
                   متن نظر{" "}
-                  <span className="text-[13px] font-normal text-[#1E2939]">
+                  <span className={`text-[13px] font-normal ${body.trim() ? "text-[#1E2939]" : "text-[#1E2939]"}`}>
                     (الزامی)
                   </span>
                 </label>
+                <Tooltip open={bodyMissing && focusedField === "body"} onOpenChange={next => { if (!next) setFocusedField(null) }}>
+                <TooltipTrigger asChild>
+                <span className="block">
                 <Textarea
                   id={`${formId}-body`}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
+                  onFocus={() => setFocusedField("body")}
+                  onBlur={() => setFocusedField(null)}
+                  aria-invalid={bodyMissing}
+                  aria-describedby={bodyMissing && focusedField === "body" ? `${formId}-body-tooltip` : undefined}
                   maxLength={1200}
                   required
-                  placeholder="از کیفیت، رنگ و تجربهٔ استفاده بنویسید…"
+                  placeholder="نظرتان درباره این کالا را بنویسید."
                   className={`min-h-28 resize-y px-4 py-3 leading-7 ${inputStyle}`}
                 />
-                <p className={`text-left ${profileText.detail}`}>
+                </span>
+                </TooltipTrigger>
+                <TooltipContent id={`${formId}-body-tooltip`} side="bottom" align="end" sideOffset={6} collisionPadding={12} className={fieldTooltipStyle} style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+                  لطفا متن نظر را وارد کنید.
+                </TooltipContent>
+                </Tooltip>
+                <p className="text-left text-sm font-light leading-7 text-gray-400">
                   {fmt(body.length)} / ۱۲۰۰
                 </p>
               </div>
@@ -604,7 +646,7 @@ export function ProductReviews({
                   }}
                   aria-labelledby={`${formId}-rating-label`}
                   dir="rtl"
-                  className="mt-3 flex flex-wrap justify-end gap-2"
+                  className="mt-3 flex flex-wrap justify-end gap-1 sm:gap-2"
                 >
                   {[1, 2, 3, 4, 5].map((star) => (
                     <label key={star} className="cursor-pointer">
@@ -669,13 +711,13 @@ export function ProductReviews({
                           option.value === "no"
                             ? `text-[#CA165C] ${
                                 recommendation === "no"
-                                  ? "border-[#CA165C]/40 bg-[#CA165C]/6"
-                                  : "border-[#CA165C]/15"
+                                  ? "border-[#CA165C] bg-[#CA165C]/6"
+                                  : "border-[#CA165C]"
                               }`
                             : `text-[#370080] ${
                                 recommendation === "yes"
-                                  ? "border-[#370080]/35 bg-[#370080]/6"
-                                  : "border-gray-200"
+                                  ? "border-[#370080] bg-[#370080]/6"
+                                  : "border-[#370080]"
                               }`
                         }`}
                       >
@@ -708,6 +750,16 @@ export function ProductReviews({
             </form>
           </DialogPrimitive.Content>
         </DialogPortal>
+      </Dialog>
+      <Dialog open={waitsForApproval && submitted} onOpenChange={setSubmitted}>
+        <DialogContent dir="rtl" style={{ fontFamily: "'Vazirmatn', sans-serif" }} className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[420px] overflow-y-auto rounded-[28px] border-gray-200 bg-white p-6 text-center motion-reduce:animate-none [&>button.absolute]:text-[#CA165C] [&>button.absolute]:left-4 [&>button.absolute]:right-auto [&>button.absolute]:flex [&>button.absolute]:size-11 [&>button.absolute]:items-center [&>button.absolute]:justify-center [&>button.absolute]:focus:outline-none [&>button.absolute]:focus:ring-0 [&>button.absolute]:focus:ring-offset-0 [&>button.absolute]:focus-visible:ring-0 [&>button.absolute]:focus-visible:ring-offset-0">
+          <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#CA165C]/6 text-[#CA165C]" aria-hidden="true"><CheckCircle size={28} strokeWidth={1.6} /></span>
+          <div className="space-y-1">
+            <DialogTitle className="text-base font-semibold text-[#1E2939]">با موفقیت ثبت شد.</DialogTitle>
+            <DialogDescription className="text-sm font-normal leading-7 text-[#6A7282]">نظر شما با موفقیت ثبت و پس از تایید در سایت منتشر خواهد شد.</DialogDescription>
+          </div>
+          <Button type="button" onClick={() => setSubmitted(false)} className={`mt-2 min-h-11 w-full rounded-xl bg-[#CA165C] text-sm font-medium text-white hover:bg-[#CA165C] hover:text-white ${focusRing}`}>بستن</Button>
+        </DialogContent>
       </Dialog>
     </section>
   )

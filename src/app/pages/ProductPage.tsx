@@ -150,7 +150,7 @@ export function ProductPage() {
 
                 {/* Thumbnail strip — right side of image area, scrollable */}
                 <div
-                  className="hidden xl:flex flex-col gap-2 shrink-0 overflow-y-auto"
+                  className="hidden xl:flex flex-col gap-2 shrink-0 overflow-x-hidden overflow-y-auto [scrollbar-width:thin]"
                   style={{ width: 130, maxHeight: 560 }}
                 >
                   {p.imgs.map((img, i) => (
@@ -159,10 +159,10 @@ export function ProductPage() {
                       type="button"
                       aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`}
                       aria-pressed={selected === i}
-                      className="focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]"
+                      className="snap-start focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]"
                       onClick={() => setSelected(i)}
                       style={{
-                        width: 130, height: usesDetailedProductLayout(p.code) ? undefined : 155, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 14, overflow: "hidden", flexShrink: 0,
+                        width: "100%", height: usesDetailedProductLayout(p.code) ? undefined : 155, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 14, overflow: "hidden", flexShrink: 0,
                         border: selected === i ? "2.5px solid #370080" : "2px solid #e5e7eb",
                         transition: "border-color 0.2s",
                       }}
@@ -182,9 +182,9 @@ export function ProductPage() {
                     />
                   </div>
                   {/* Mobile thumbnails */}
-                  <div className="xl:hidden flex gap-2 overflow-x-auto pb-2 mt-3">
+                  <div className="xl:hidden flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-2 mt-3 [scrollbar-width:thin]">
                     {(usesDetailedProductLayout(p.code) ? p.imgs : p.imgs.slice(0, 5)).map((img, i) => (
-                      <button key={i} type="button" aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`} aria-pressed={selected === i} className="focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]" onClick={() => setSelected(i)} style={{ width: 72, height: usesDetailedProductLayout(p.code) ? undefined : 84, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
+                      <button key={i} type="button" aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`} aria-pressed={selected === i} className="snap-start focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]" onClick={() => setSelected(i)} style={{ width: 72, height: usesDetailedProductLayout(p.code) ? undefined : 84, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
                         <ImageWithFallback src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
@@ -195,7 +195,7 @@ export function ProductPage() {
 
             {/* ══ LEFTMOST: info panel (last in RTL DOM) ══ */}
             <div
-              className={`w-full flex flex-col min-w-0 text-right ${usesDetailedProductLayout(p.code) ? "xl:relative xl:self-stretch xl:flex-1" : "xl:w-[300px] xl:shrink-0"}`}
+              className={`w-full flex flex-col min-w-0 text-right ${usesDetailedProductLayout(p.code) ? "sm:grid sm:grid-cols-2 sm:items-start sm:gap-x-6 xl:relative xl:flex xl:self-stretch xl:flex-1" : "xl:w-[300px] xl:shrink-0"}`}
               dir="rtl"
               style={usesDetailedProductLayout(p.code) ? F : undefined}
             >
@@ -209,7 +209,7 @@ export function ProductPage() {
               </div>}
 
               {/* Product name / code heading */}
-              <div className={`flex w-full items-end justify-between gap-3 pb-3 mb-4 border-b border-gray-200 ${usesDetailedProductLayout(p.code) ? "xl:min-h-[66px]" : ""}`}>
+              <div className={`flex w-full items-end justify-between gap-3 pb-3 mb-4 border-b border-gray-200 ${usesDetailedProductLayout(p.code) ? "flex-wrap sm:col-span-2 sm:flex-nowrap xl:min-h-[66px]" : ""}`}>
                 <h1 className="min-w-0 text-base font-black text-gray-900 text-right leading-7" style={F}>
                   {p.name ? p.name : `کد ${p.code}`}
                 </h1>
@@ -222,7 +222,7 @@ export function ProductPage() {
                 </div>}
               </div>
               {usesDetailedProductLayout(p.code) && (p.code !== "6130" || newReviewRatings.length > 0) && (
-                  <div className="mb-3 flex self-end items-center gap-2 whitespace-nowrap text-base font-semibold text-gray-800" style={F}>
+                  <div className="mb-3 flex self-end items-center gap-2 whitespace-nowrap text-base font-semibold text-gray-800 sm:col-span-2 sm:justify-self-end" style={F}>
                     {p.code === "6130" ? <>
                       <span>{fmt(newReviewRatings.length)} نظر</span>
                       <span aria-hidden="true">|</span>
@@ -284,7 +284,7 @@ export function ProductPage() {
               <div
               className={`w-full border border-gray-200 p-5 bg-white ${
                 usesDetailedProductLayout(p.code)
-                  ? "rounded-[28px] xl:absolute xl:bottom-0 xl:left-0 xl:max-w-[400px]"
+                  ? "rounded-[28px] sm:mb-5 sm:max-w-[400px] sm:self-end sm:justify-self-end xl:absolute xl:bottom-0 xl:left-0 xl:mb-0"
                   : "rounded-2xl"
               }`}
 

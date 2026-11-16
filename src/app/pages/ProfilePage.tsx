@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { addToCart } from "@/app/lib/cart";
-import { clearUser, getUser } from "@/app/components/Header";
+import { clearUser, getUser, openMobileProfileMenu } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
@@ -218,54 +218,42 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
   const s = statusMap[order.status];
   return (
     <div className="pb-2 sm:pb-3 lg:pb-4">
-      <div className="relative border border-gray-200 rounded-2xl bg-white hover:shadow-sm transition-shadow overflow-hidden">
+      <div className="relative border border-gray-300 rounded-2xl bg-white hover:shadow-sm transition-shadow overflow-hidden">
         <div className="p-4 sm:p-5" dir="rtl">
           {/* Title row: order code + status badge */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <span className="text-sm font-black sm:text-base" style={{ color: "#1E2939", ...F }}>
+            <span className="text-sm font-semibold sm:text-base sm:font-black" style={{ color: "#1E2939", ...F }}>
               کد سفارش: {order.id}
             </span>
-            <span className="inline-block rounded-full border border-gray-200 px-3 py-1 text-[10px] font-light" style={{ backgroundColor: "#fff", color: "#370080", ...F }}>
+            <span className="inline-block rounded-full border border-[#370080] px-3 py-1 text-sm font-medium sm:font-light" style={{ backgroundColor: "#fff", color: "#370080", ...F }}>
               {s.label}
             </span>
           </div>
-          {/* Info grid */}
-          <div className="flex-1" style={F}>
-            <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 mb-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">مبلغ:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{fmt(order.amount)} تومان</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">تاریخ:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{order.date}</span>
-              </div>
+          {/* Order details: amount/date, site/delivery codes, items/dispatch. */}
+          <div className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-3 sm:gap-x-6 sm:gap-y-2" style={F}>
+            <div data-order-field="amount" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">مبلغ:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{fmt(order.amount) + " \u062a\u0648\u0645\u0627\u0646"}</span>
             </div>
-            <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 mb-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">کد سفارش سایت:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{order.siteCode}</span>
-              </div>
-              <div className="flex items-baseline gap-1.5 sm:hidden">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">کد تحویل:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{order.deliveryCode}</span>
-              </div>
-              <div className="hidden items-baseline gap-1.5 sm:flex">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">زمان ارسال:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{order.delivery}</span>
-              </div>
+            <div data-order-field="date" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">تاریخ:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{order.date}</span>
             </div>
-            <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 text-sm font-light text-[#6A7282]">تعداد اقلام:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:text-sm">{fmt(order.items)}</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 text-sm font-light text-[#6A7282] sm:hidden">زمان ارسال:</span>
-                <span className="text-xs font-bold text-[#1E2939] sm:hidden">{order.delivery}</span>
-                <span className="hidden shrink-0 text-sm font-light text-[#6A7282] sm:inline">کد تحویل:</span>
-                <span className="hidden font-bold text-[#1E2939] sm:inline sm:text-sm">{order.deliveryCode}</span>
-              </div>
+            <div data-order-field="siteCode" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">کد سفارش سایت:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{order.siteCode}</span>
+            </div>
+            <div data-order-field="deliveryCode" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">کد تحویل:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{order.deliveryCode}</span>
+            </div>
+            <div data-order-field="items" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">تعداد اقلام:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{fmt(order.items)}</span>
+            </div>
+            <div data-order-field="delivery" className="flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="shrink-0 text-sm font-light text-[#6A7282]">زمان ارسال:</span>
+              <span className="max-w-full break-words text-xs font-medium sm:font-bold leading-5 text-[#1E2939] sm:text-sm">{order.delivery}</span>
             </div>
           </div>
 
@@ -346,18 +334,18 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
             </div>
             {/* Buttons — left */}
             <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:self-auto">
-              <button className="min-h-11 rounded-lg px-2.5 py-2 text-xs font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#ffffff", color: "#370080", border: "1px solid #370080", ...F }}>مشاهده صورتحساب</button>
+              <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#ffffff", color: "#370080", border: "1px solid #370080", ...F }}>مشاهده صورتحساب</button>
               {order.status === "delivered" && (
                 <button onClick={() => setSurveyOpen(o => !o)}
-                  className="min-h-11 rounded-lg px-2.5 py-2 text-xs font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm"
+                  className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm"
                   style={{ backgroundColor: "#370080", color: "#fff", ...F }}>
                   {surveyOpen ? "بستن نظرسنجی" : "نظرسنجی"}
                 </button>
               )}
-              {showPay && <button className="min-h-11 rounded-lg px-2.5 py-2 text-xs font-bold text-white transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#370080", ...F }}>پرداخت</button>}
+              {showPay && <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold text-white transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#370080", ...F }}>پرداخت</button>}
               {order.tab !== "cancelled" && order.tab !== "delivered" && (
                 <Button
-                  className="h-auto rounded-lg bg-brand-pink px-2.5 py-2 text-xs font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:px-4 sm:py-2.5 sm:text-sm"
+                  className="h-8 min-h-8 rounded-lg bg-brand-pink px-2.5 py-2 text-xs font-medium sm:font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:h-auto sm:min-h-0 sm:px-4 sm:py-2.5 sm:text-sm"
                   style={F}
                 >
                   لغو سفارش
@@ -399,16 +387,21 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
           background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
         }
       `}</style>
-      <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>سفارش‌ها</h1>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h1 className="text-right text-base font-semibold text-gray-900 sm:text-xl sm:font-black" style={F}>سفارش‌ها</h1>
+        <button type="button" onClick={openMobileProfileMenu} aria-label="باز کردن منوی پروفایل" aria-haspopup="dialog" className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C] lg:hidden">
+          <Menu size={20} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+      </div>
       <div className="h-px bg-gray-100 mb-5" />
-      <div className="flex items-center border border-gray-300 rounded-xl px-4 py-3 gap-2 mb-6 bg-white">
+      <div className="flex items-center border border-gray-300 rounded-xl px-4 py-2 gap-2 mb-6 bg-white sm:py-3">
         <Search size={16} className="text-gray-400 shrink-0" />
-        <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="min-w-0 flex-1 bg-transparent text-xs font-normal text-gray-400 outline-none text-right placeholder:text-gray-400 sm:text-sm" style={F} />
+        <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="min-w-0 flex-1 bg-transparent text-sm font-light text-gray-400 outline-none text-right placeholder:text-gray-400 sm:font-normal" style={{ ...F, fontSize: 14 }} />
       </div>
       <div className="mb-6 flex flex-wrap items-center justify-start gap-1.5 sm:gap-2">
         {orderTabs.map(({ key, label, count }) => (
           <button key={key} onClick={() => { setActiveTab(key); setPage(1); }}
-            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-sm font-semibold transition-all sm:gap-1.5 sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
+            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-sm font-medium transition-all sm:font-semibold sm:gap-1.5 sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
             style={F}>
             {label}
             <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] sm:h-5 sm:w-5 sm:text-xs"

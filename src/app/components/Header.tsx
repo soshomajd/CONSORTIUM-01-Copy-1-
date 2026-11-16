@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import { useReducedMotion } from "motion/react"
-import { Search, X, Bell, ShoppingCart, Zap, ChevronLeft } from "lucide-react"
+import { Search, X, ChevronLeft } from "lucide-react"
 import { getCartCount } from "@/app/lib/cart"
 import { MobileNavigation } from "./MobileNavigation"
 import { getCart } from "@/app/store/cart"
@@ -21,6 +21,8 @@ import {
 import { homeAssets as assets } from "@/app/components/home/assets"
 import "@/styles/home-reference.css"
 
+const notificationIcon = `${import.meta.env.BASE_URL}images/header/notification.png`
+
 export function getUser(): string | null {
   return localStorage.getItem("consortiumUser")
 }
@@ -29,6 +31,10 @@ export function setUser(name: string) {
 }
 export function clearUser() {
   localStorage.removeItem("consortiumUser")
+}
+
+export function openMobileProfileMenu() {
+  window.dispatchEvent(new Event("openMobileProfileMenu"))
 }
 
 export function Header() {
@@ -44,6 +50,13 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [info, setInfo] = useState<"about" | "contact" | null>(null)
   const user = getUser()
+  useEffect(() => {
+    const openMenu = () => {
+      if (window.matchMedia("(max-width: 1023px)").matches) setMobileMenuOpen(true)
+    }
+    window.addEventListener("openMobileProfileMenu", openMenu)
+    return () => window.removeEventListener("openMobileProfileMenu", openMenu)
+  }, [])
   useEffect(() => {
     const update = () => {
       setCartCount(getCartCount())
@@ -175,10 +188,12 @@ export function Header() {
                 }
               }}
             >
-              <Bell
+              <img
+                src={notificationIcon}
+                alt=""
                 className="home-mobile-login-icon"
-                size={26}
-                strokeWidth={1.5}
+                width={30}
+                height={30}
               />
               {user ? "کاربر سایت" : "ورود"}
             </Link>
@@ -188,7 +203,7 @@ export function Header() {
                 aria-label="سفارش سریع"
                 className="home-quick-order"
               >
-                <Zap size={25} strokeWidth={1.4} />
+                <img src={assets[4]} alt="" width={30} height={30} />
               </Link>
               <Popover
                 open={cartOpen}
@@ -206,7 +221,7 @@ export function Header() {
                     className="home-cart"
                     aria-label={`سبد خرید؛ ${cartCount.toLocaleString("fa-IR")} کالا`}
                   >
-                    <ShoppingCart size={25} strokeWidth={1.4} />
+                    <img src={assets[5]} alt="" width={30} height={30} />
                     <span>{cartCount.toLocaleString("fa-IR")}</span>
                   </button>
                 </PopoverTrigger>
@@ -278,7 +293,7 @@ export function Header() {
                 aria-label="اعلانات حساب کاربری"
                 className="home-account"
               >
-                <Bell size={25} strokeWidth={1.4} />
+                <img src={notificationIcon} alt="" width={30} height={30} />
               </Link>
             </div>
           </div>
