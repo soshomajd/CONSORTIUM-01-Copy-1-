@@ -294,7 +294,8 @@ export function ComparePage() {
                       {product ? (() => {
                         const quantity = quantities[product.id] ?? 1;
                         return (
-                          <div className="relative flex h-full min-h-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_4px_18px_rgba(30,41,57,0.05)] sm:min-h-[400px] sm:p-4">
+                          <div className="relative -top-[36px] flex h-full min-h-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_4px_18px_rgba(30,41,57,0.05)] sm:min-h-[400px] sm:p-4">
+
                             <Button
                               variant="ghost"
                               size="icon"

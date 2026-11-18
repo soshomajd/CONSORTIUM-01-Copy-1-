@@ -1,3 +1,4 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import { useId, useMemo, useState, type FormEvent } from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import {
@@ -345,7 +346,7 @@ export function ProductReviews({
                 <article
                   key={review.id}
                   className="rounded-3xl border border-gray-200 bg-white p-5 sm:p-6"
-                  aria-label={`نظر ${review.name}`}
+                  aria-label={`نظر ${toPersianDigits(review.name)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -358,7 +359,7 @@ export function ProductReviews({
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={profileText.title}>
-                            {review.name}
+                            {toPersianDigits(review.name)}
                           </span>
                           {review.buyer && (
                             <span className="inline-flex items-center gap-1 rounded-lg bg-[#370080]/6 px-2 py-1 text-[13px] font-normal text-[#370080]">
@@ -380,10 +381,10 @@ export function ProductReviews({
                     <Stars rating={review.rating} />
                   </div>
                   <h3 className="mt-5 text-base font-semibold leading-7 text-[#1E2939]">
-                    {review.title}
+                    {toPersianDigits(review.title)}
                   </h3>
                   <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-normal leading-7 text-[#6A7282]">
-                    {review.body}
+                    {toPersianDigits(review.body)}
                   </p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                     <span
@@ -407,7 +408,7 @@ export function ProductReviews({
                       <Button
                         type="button"
                         variant="ghost"
-                        aria-label={`پسندیدن نظر ${review.name}`}
+                        aria-label={`پسندیدن نظر ${toPersianDigits(review.name)}`}
                         aria-pressed={votes[review.id] === "like"}
                         onClick={() => toggleVote(review.id, "like")}
                         className={`min-h-11 min-w-14 gap-2 rounded-xl border border-[#370080] px-3 text-[13px] font-normal text-[#370080] hover:bg-[#370080]/6 hover:text-[#370080] ${focusRing} ${
@@ -422,7 +423,7 @@ export function ProductReviews({
                       <Button
                         type="button"
                         variant="ghost"
-                        aria-label={`نپسندیدن نظر ${review.name}`}
+                        aria-label={`نپسندیدن نظر ${toPersianDigits(review.name)}`}
                         aria-pressed={votes[review.id] === "dislike"}
                         onClick={() => toggleVote(review.id, "dislike")}
                         className={`min-h-11 min-w-14 gap-2 rounded-xl border border-[#CA165C] px-3 text-[13px] font-normal text-[#CA165C] hover:bg-[#CA165C]/6 hover:text-[#CA165C] ${focusRing} ${

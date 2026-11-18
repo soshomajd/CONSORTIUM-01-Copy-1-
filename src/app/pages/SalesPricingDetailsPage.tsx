@@ -13,8 +13,6 @@ import {
   Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { Footer } from "@/app/components/Footer";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -37,12 +35,12 @@ type DemoDecorRow = {
 
 function DecorMediaUploadCards() {
   const [decorSuccessOpen, setDecorSuccessOpen] = DecorReact.useState(false);
-  const [decorTimelineVisible, setDecorTimelineVisible] = DecorReact.useState(true);
+  const decorTimelineVisible = true;
   const [deletingRowIds, setDeletingRowIds] = DecorReact.useState<string[]>([]);
 
 
   // مسیر واقعی عکس آلبوم پروژه را اینجا قرار بده.
-  const albumImage = `${import.meta.env.BASE_URL}images/album-cover.jpg`;
+  const albumImage = "/images/album-cover.jpg";
 
   const [rows, setRows] = DecorReact.useState<DemoDecorRow[]>([]);
   const [decorSubmitted, setDecorSubmitted] = useState(false);
@@ -73,98 +71,73 @@ function DecorMediaUploadCards() {
     },
   ];
 
- function handleDecorSubmit() {
-  setDecorTimelineVisible(true);
-  setDecorSuccessOpen(true);
-}
+  const decorScrollFrameRef = useRef<number | null>(null);
+  const decorSubmitButtonRef = useRef<HTMLButtonElement>(null);
+  const decorConfirmButtonRef = useRef<HTMLButtonElement>(null);
 
-async function handleDecorSuccessConfirm() {
-  if (decorSendingRef.current) return;
-
-  decorSendingRef.current = true;
-  setDecorSending(true);
-  setDecorSuccessOpen(false);
-
-  try {
-    // فرصت برای بسته‌شدن مدال و آزادشدن اسکرول صفحه.
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 200);
-    });
-
-    const timeline = decorTimelineRef.current;
-
-    if (timeline) {
-      const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      const rect = timeline.getBoundingClientRect();
-      const startY = window.scrollY;
-
-      // قرارگرفتن مرکز تایم‌لاین در مرکز ارتفاع صفحه.
-      const desiredY =
-        startY + rect.top + rect.height / 2 - window.innerHeight / 2;
-
-      const maxScrollY = Math.max(
-        0,
-        document.documentElement.scrollHeight - window.innerHeight
-      );
-
-      const targetY = Math.min(
-        maxScrollY,
-        Math.max(0, desiredY)
-      );
-
-      const distance = targetY - startY;
-
-      if (reduceMotion) {
-        window.scrollTo({
-          top: targetY,
-          behavior: "instant",
-        });
-      } else if (Math.abs(distance) > 1) {
-        await new Promise<void>((resolve) => {
-          // سریع‌تر از نسخهٔ قبلی، با شروع و پایان نرم.
-          const duration = 600;
-          const startedAt = performance.now();
-
-          function animateScroll(now: number) {
-            const progress = Math.min(
-              (now - startedAt) / duration,
-              1
-            );
-
-            // شتاب‌گیری نرم در ابتدا و کاهش سرعت در انتها.
-            const eased =
-              progress < 0.5
-                ? 2 * progress * progress
-                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-            window.scrollTo({
-              top: startY + distance * eased,
-              behavior: "instant",
-            });
-
-            if (progress < 1) {
-              requestAnimationFrame(animateScroll);
-            } else {
-              resolve();
-            }
-          }
-
-          requestAnimationFrame(animateScroll);
-        });
-      }
+  useEffect(() => () => {
+    if (decorScrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(decorScrollFrameRef.current);
     }
+  }, []);
 
-    // فقط پس از پایان اسکرول، شمارهٔ ۱ تیک می‌شود.
-    setDecorSubmitted(true);
-  } finally {
-    decorSendingRef.current = false;
-    setDecorSending(false);
+  function handleDecorSubmit() {
+    setDecorSuccessOpen(true);
   }
-}
 
+  function handleDecorSuccessConfirm() {
+    if (decorSendingRef.current) return;
+    decorSendingRef.current = true;
+    setDecorSending(true);
+    setDecorSuccessOpen(false);
+  }
+
+  function scrollToDecorTimeline() {
+    // Wait for dialog unmount effects and scroll-lock release, then measure.
+    decorScrollFrameRef.current = window.requestAnimationFrame(() => {
+      decorScrollFrameRef.current = window.requestAnimationFrame(() => {
+        const timeline = decorTimelineRef.current;
+        if (!timeline) {
+          decorSendingRef.current = false;
+          setDecorSending(false);
+          return;
+        }
+        const rect = timeline.getBoundingClientRect();
+        const startY = window.scrollY;
+        const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        const targetY = Math.max(0, Math.min(maxY,
+          startY + rect.top + rect.height / 2 - window.innerHeight / 2
+        ));
+        const distance = targetY - startY;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Give longer journeys more time without making short scrolls feel sluggish.
+        const duration = reduceMotion || Math.abs(distance) <= 1
+          ? 0
+          : Math.min(1100, Math.max(750, 650 + Math.abs(distance) * 0.3));
+        const startedAt = performance.now();
+
+        function animateScroll(now: number) {
+          const progress = duration === 0 ? 1 : Math.min((now - startedAt) / duration, 1);
+          // Smootherstep: zero velocity and acceleration at both ends.
+          const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
+          window.scrollTo({ top: startY + distance * eased, behavior: 'instant' });
+          if (progress < 1) {
+            decorScrollFrameRef.current = window.requestAnimationFrame(animateScroll);
+          } else {
+            // Paint the final position before showing the completed step.
+            decorScrollFrameRef.current = window.requestAnimationFrame(() => {
+              timeline?.focus({ preventScroll: true });
+              setDecorSubmitted(true);
+              decorSendingRef.current = false;
+              setDecorSending(false);
+              decorScrollFrameRef.current = null;
+            });
+          }
+        }
+        decorScrollFrameRef.current = window.requestAnimationFrame(animateScroll);
+      });
+    });
+  }
 
   function simulateUpload(group: DemoDecorGroup) {
     const items: DemoDecorRow[] =
@@ -401,9 +374,9 @@ border: none;
       {/* تایم‌لاین بالای باکس‌ها و هم‌تراز با ابتدای عنوان */}
       {decorTimelineVisible && (
         <div
-        ref={decorTimelineRef}
-        tabIndex={-1}
-        dir="rtl"
+          ref={decorTimelineRef}
+          tabIndex={-1}
+          dir="rtl"
 
 
           className="mt-15 w-full overflow-x-auto pb-3"
@@ -474,7 +447,7 @@ border: none;
 
       {/* سه باکس آپلود نمایشی */}
 
-      <div className="mx-auto mt-30 mb-30 grid w-full grid-cols-1 gap-6 sm:w-[calc(60%+32px)] sm:grid-cols-3">
+      <div className="mx-auto mt-[90px] mb-10 grid w-full grid-cols-1 gap-6 sm:w-[calc(60%+32px)] sm:grid-cols-3">
         {cards.map((card) => (
           <button
             key={card.group}
@@ -552,7 +525,7 @@ border: none;
 
       {/* ردیف‌های ثبت‌شده */}
       <div
-        className="mx-auto mt-6 flex w-full max-w-[900px] flex-col gap-3"
+        className="mx-auto mt-2 flex w-full max-w-[900px] flex-col gap-3"
         aria-live="polite"
       >
       {rows.map((row) => (
@@ -695,6 +668,7 @@ border: none;
 >
   <button
     type="button"
+    ref={decorSubmitButtonRef}
     onClick={handleDecorSubmit}
     disabled={decorSending}
     aria-busy={decorSending}
@@ -715,12 +689,16 @@ border: none;
 {/* مدال موفقیت */}
 <Dialog open={decorSuccessOpen} onOpenChange={setDecorSuccessOpen}>
   <DialogContent
+    onOpenAutoFocus={(event) => {
+      event.preventDefault();
+      decorConfirmButtonRef.current?.focus({ preventScroll: true });
+    }}
     onCloseAutoFocus={(event) => {
+      event.preventDefault();
       if (decorSendingRef.current) {
-        event.preventDefault();
-
-        // بازگرداندن فوکوس بدون جابه‌جایی صفحه.
-        decorTimelineRef.current?.focus({ preventScroll: true });
+        scrollToDecorTimeline();
+      } else {
+        decorSubmitButtonRef.current?.focus({ preventScroll: true });
       }
     }}
     dir="rtl"
@@ -746,6 +724,7 @@ border: none;
 
     <button
       type="button"
+      ref={decorConfirmButtonRef}
       onClick={handleDecorSuccessConfirm}
       disabled={decorSending}
       aria-busy={decorSending}
@@ -1032,19 +1011,24 @@ function SalesChart() {
   const filters: ChartFilter[] = ["هفتگی", "ماهانه", "سالانه"];
 
   useEffect(() => {
-    const t = setTimeout(() => setChartVisible(true), 80);
-    return () => clearTimeout(t);
+    const timer = window.setTimeout(() => setChartVisible(true), 80);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (filter === displayFilter) return;
+    const timer = window.setTimeout(() => {
+      setDisplayFilter(filter);
+      setChartVisible(true);
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450);
+    return () => window.clearTimeout(timer);
+  }, [filter, displayFilter]);
 
   function handleFilter(f: ChartFilter) {
     if (f === filter) return;
     setFilter(f);
-    setChartVisible(false);
+    setChartVisible(f === displayFilter);
     setHoveredIdx(null);
-    setTimeout(() => {
-      setDisplayFilter(f);
-      setChartVisible(true);
-    }, 280);
   }
 
   const maxVal = Math.max(...data.flatMap(d => [d.sold, d.target]));
@@ -1058,14 +1042,15 @@ function SalesChart() {
 return (
   <div className="mt-10 flex w-full max-w-[1380px] flex-col gap-2">
     <div
-      className="w-full rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm"
+      className="w-full rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm lg:pl-[40px]"
       style={{ paddingBottom: "60px" }}>
         <div className="mb-4 flex -translate-x-[20px] -translate-y-[-10px] items-center gap-2" dir="rtl">
           <p className="text-[20px] font-[800] text-[#370080]" style={{ color: "#370080", fontWeight: 700, ...F }}>رشد فروش</p>
         </div>
-        <div className="w-full lg:w-[62.5%]">
+        <div className="flex flex-col items-start gap-8 lg:grid lg:grid-cols-[minmax(0,77fr)_minmax(0,35fr)] lg:items-start lg:gap-x-[80px] lg:gap-y-0" dir="rtl">
+        <div className="w-full min-w-0 lg:contents">
         {/* Header */}
-        <div className="mb-[32px] flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-0" dir="rtl">
+        <div className="mb-[32px] flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-0 lg:col-start-1 lg:row-start-1" dir="rtl">
           <div className="flex flex-col gap-1.5">
           </div>
           <div className="flex w-full flex-nowrap items-center gap-1 sm:w-auto sm:gap-1.5">
@@ -1092,8 +1077,8 @@ return (
         </div>
 
         {/* Chart body */}
-        <div className="flex gap-2" dir="ltr" style={{ opacity: chartVisible ? 1 : 0, transform: chartVisible? "translate(-20px, 0)": "translate(-20px, 10px)",
-          transition: "opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
+        <div className="flex w-full min-w-0 gap-2 lg:col-start-1 lg:row-start-2" dir="ltr" style={{ opacity: chartVisible ? 1 : 0, transform: chartVisible? "translate(-20px, 0)": "translate(-20px, 10px)",
+          transition: "opacity 0.45s cubic-bezier(0.45,0,0.55,1), transform 0.65s cubic-bezier(0.45,0,0.55,1)" }}>
           {/* Y-axis labels */}
           <div className="flex flex-col justify-between items-end pb-6 shrink-0" style={{ height: CHART_H + 24 }}>
             {yTicks.map(v => (
@@ -1146,12 +1131,12 @@ return (
                         />
                       ))}
 
-                      <polygon points={targetFill} fill="url(#targetGradPricing)" style={{ animation: "chartFillFade 0.7s ease 0.1s both" }} />
+                      <polygon points={targetFill} fill="url(#targetGradPricing)" style={{ animation: "chartFillFade 1.1s cubic-bezier(0.45,0,0.55,1) 0.15s both" }} />
 
                       <polyline points={targetPts} fill="none" stroke="#4141D9" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
-                        pathLength="1" style={{ strokeDasharray: "1", strokeDashoffset: "1", animation: "chartLineDraw 1s cubic-bezier(0.22,1,0.36,1) 0.05s forwards" }} />
+                        pathLength="1" style={{ strokeDasharray: "1", strokeDashoffset: "1", animation: "chartLineDraw 1.4s cubic-bezier(0.45,0,0.55,1) 0.05s forwards" }} />
                       <polyline points={soldPts}   fill="none" stroke={PURPLE}  strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
-                        pathLength="1" style={{ strokeDasharray: "1", strokeDashoffset: "1", animation: "chartLineDraw 1s cubic-bezier(0.22,1,0.36,1) 0.15s forwards" }} />
+                        pathLength="1" style={{ strokeDasharray: "1", strokeDashoffset: "1", animation: "chartLineDraw 1.4s cubic-bezier(0.45,0,0.55,1) 0.15s forwards" }} />
                     </svg>
 
                     {data.map((d, i) => (
@@ -1254,7 +1239,7 @@ return (
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-[22px]">
+        <div className="flex items-center justify-center gap-6 mt-[22px] lg:col-start-1 lg:row-start-3">
           {[
             { key: "sold",   label: "تعداد فروخته شده", color: "#370080" },
             { key: "target", label: "تعداد تارگت فروش",  color: "#CA165C" },
@@ -1285,6 +1270,28 @@ return (
             </span>
             </div>
           ))}
+        </div>
+        </div>
+        <div className="mx-auto flex w-full max-w-[380px] shrink-0 flex-col gap-4 lg:col-start-2 lg:row-start-2 lg:mx-0 lg:max-w-none lg:justify-self-stretch lg:self-start" dir="rtl" style={F}>
+          <div className="album-summary-card flex min-h-[220px] flex-col items-center justify-center rounded-[30px] border border-gray-100 bg-white p-3 text-center shadow-sm">
+                <span className="text-2xl font-black text-[#370080] sm:text-3xl">
+                  {toPersianNum(20)} رول
+                </span>
+
+                <span
+                  className="mt-1 text-[16px] font-light text-[#370080]"
+                  style={{ color: "#370080", fontSize: "16px", fontWeight: 300 }}
+                >
+                 میانگین فروش دوماه اخیر شما
+
+                </span>
+              </div>
+          <div className="flex min-h-[64px] items-center justify-between gap-3 rounded-2xl bg-[#370080] px-5 py-3.5 text-white shadow-sm">
+              <span className="text-sm font-bold">مجموع شارژ کیف پول شما از رشد فروش</span>
+              <span className="rounded-xl bg-white/15 px-3.5 py-1 text-base font-black text-white">
+                {toPersianNum(monthlyLotteryStats.reduce((sum, item) => sum + item.chances, 0))} شانس
+              </span>
+            </div>
         </div>
         </div>
       </div>
@@ -1639,26 +1646,18 @@ function QuestPathTrackerBox({
   return (
     <div
     
-  className="mt-10 flex w-full max-w-[1380px] flex-col gap-2"
+  className="mt-10 flex w-full max-w-[1380px] flex-col gap-2 overflow-clip"
   data-roadmap-active={isActive ? "true" : "false"}
 >
   <style>{`
+    /* Only the horizontal axis is scrollable while roadmap elements enter. */
+    .quest-roadmap-scroll::-webkit-scrollbar:vertical {
+      width: 0;
+    }
     @keyframes questRoadmapEnter {
       0% {
         opacity: 0;
         transform: translateY(18px);
-      }
-      55% {
-        opacity: 1;
-        transform: translateY(-5px);
-      }
-      75% {
-        opacity: 1;
-        transform: translateY(2px);
-      }
-      90% {
-        opacity: 1;
-        transform: translateY(-1px);
       }
       100% {
         opacity: 1;
@@ -1692,7 +1691,7 @@ function QuestPathTrackerBox({
     [data-roadmap-active="true"] .quest-roadmap-item {
       animation-name: questRoadmapEnter;
       animation-duration: 850ms;
-      animation-timing-function: ease-in-out;
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
       animation-fill-mode: both;
     }
 
@@ -1816,13 +1815,14 @@ function QuestPathTrackerBox({
 
         {/* Desktop / Tablet Serpentine Timeline (Exact match to reference image) */}
         <div
-            className="relative mx-auto mt-6 hidden w-[100%] overflow-x-auto md:block"
+            data-entrance="self-animated"
+            className="quest-roadmap-scroll relative mx-auto mt-6 hidden w-[100%] overflow-x-auto overflow-y-hidden md:block"
             dir="ltr"
           >
 
           <svg
             viewBox="0 0 1240 670"
-            className="h-auto w-full min-w-[768px] select-none"
+            className="block h-auto w-full min-w-[768px] overflow-hidden select-none"
             style={F}
           >
             {/* Main Serpentine Connecting Line (starts from step 1, no line from start pill to step 1) */}
@@ -2097,7 +2097,7 @@ function QuestPathTrackerBox({
                 <div
                   dir="rtl"
                   style={F}
-                  className="mx-auto mt-6 flex w-[90%] items-center justify-between gap-2
+                  className="mx-auto mt-6 flex w-[90%] items-center justify-between gap-4
                     rounded-2xl bg-[#370080] px-5 py-3.5 text-white shadow-sm"
 
                 >
@@ -2491,7 +2491,7 @@ function AlbumDiversityChartBox({ isActive }: { isActive: boolean }) {
                     <div className="mt-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border bg-white p-1 shadow-xs sm:h-20 sm:w-20">
 
                       <img
-                        src={`${import.meta.env.BASE_URL}images/album-cover.jpg`}
+                        src="/images/album-cover.jpg"
                         alt={album.name}
                         className="h-full w-full object-contain"
                       />
@@ -2931,10 +2931,8 @@ function LotteryRadialGaugeBox({ isActive }: { isActive: boolean }) {
   const baseHalfW = 16;
 
   return (
-    <div className="mt-10 flex w-full max-w-[1380px] flex-col gap-2">
-      <div className="w-full rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
-      style={{ padding: "40px" }}
-      >
+    <div className="flex w-full flex-col gap-2 rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm sm:p-10">
+      <div className="w-full">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2" dir="rtl">
         <div className="flex flex-col items-start gap-2">
           <p
@@ -3336,7 +3334,7 @@ function LotteryRadialGaugeBox({ isActive }: { isActive: boolean }) {
 
 
             <div className="flex items-center justify-between rounded-2xl bg-[#370080] px-5 py-3.5 text-white shadow-sm">
-              <span className="text-sm font-bold">مجموع شانس قرعه‌کشی شما</span>
+              <span className="text-sm font-bold">مجموع شارژ کیف پول شما از رشد فروش</span>
               <span className="rounded-xl bg-white/15 px-3.5 py-1 text-base font-black text-white">
                 {toPersianNum(totalChances)} شانس
               </span>
@@ -3637,7 +3635,7 @@ function PromotionHero({
 {/* تصویر تمام‌عرض با منحنی سفید در پایین */}
 <div className="relative h-[320px] w-full overflow-hidden sm:h-[440px] lg:h-[560px]">
   <img
-    src={`${import.meta.env.BASE_URL}images/promotion-hero.webp`}
+    src="/images/promotion-hero.webp"
     alt="آلبوم کاغذدیواری تکسچر"
     className="absolute inset-0 block h-full w-full object-cover"
     style={{ objectPosition: "center 42%" }}
@@ -3907,6 +3905,54 @@ export function SalesPricingDetailsPage() {
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("sales-growth");
   const confirmTimerRef = useRef<number | null>(null);
+  const promotionPanelsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = promotionPanelsRef.current;
+    if (!container || !confirmedBrandId) return;
+
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+
+    const panel = container.querySelector<HTMLElement>(':scope > section:not([hidden])');
+    if (!panel) return;
+
+    const animations: Animation[] = [];
+    const candidates = Array.from(panel.querySelectorAll<HTMLElement>(
+      'div[class*="rounded"], h2, h3, p, button, input, select, textarea, table, ol > li, img, svg'
+    )).filter(element =>
+      // SVG internals and button icons already travel with their parent control.
+      !element.closest('svg, [data-entrance="self-animated"]') &&
+      element.getBoundingClientRect().width > 0 &&
+      element.getBoundingClientRect().height > 0
+    );
+
+    const animate = (element: HTMLElement, index: number) => {
+      // Preserve existing Tailwind translations on charts, labels, and controls.
+      const baseTranslate = window.getComputedStyle(element).translate;
+      const [baseX = '0px', baseY = '0px', baseZ = '0px'] =
+        baseTranslate === 'none' ? [] : baseTranslate.split(/\s+/);
+      const animation = element.animate([
+        { opacity: 0, translate: baseX + ' calc(' + baseY + ' + 14px) ' + baseZ },
+        { opacity: 1, translate: baseX + ' ' + baseY + ' ' + baseZ },
+      ], {
+        duration: 800,
+        delay: Math.min(index * 35, 280),
+        easing: 'cubic-bezier(0.45, 0, 0.25, 1)',
+        fill: 'backwards',
+      });
+      animations.push(animation);
+    };
+
+    // Replay when changing tabs, preserving each menu's state and chart animations.
+    candidates.forEach(animate);
+    const stopAnimations = () => animations.forEach(animation => animation.cancel());
+    motionPreference.addEventListener('change', stopAnimations);
+    return () => {
+      motionPreference.removeEventListener('change', stopAnimations);
+      stopAnimations();
+    };
+  }, [activeSection, confirmedBrandId]);
 
   useEffect(() => {
     return () => {
@@ -3937,6 +3983,15 @@ export function SalesPricingDetailsPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
       <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .pricing-promotion-panels *,
+          .pricing-promotion-panels *::before,
+          .pricing-promotion-panels *::after {
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
         @keyframes chartLineDraw {
           from { stroke-dashoffset: 1; }
           to   { stroke-dashoffset: 0; }
@@ -3946,7 +4001,7 @@ export function SalesPricingDetailsPage() {
           to   { opacity: 1; }
         }
       `}</style>
-      <Header />
+
         <div className="px-4 pt-6 sm:px-6">
             <PromotionHero
                 onBack={() => navigate("/profile")}
@@ -4130,7 +4185,7 @@ export function SalesPricingDetailsPage() {
     {/* خط رنگی متحرک زیر گزینهٔ فعال */}
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-0 z-20 h-[5px] rounded-t-[8px] transition-[left,width,background-color] duration-[400ms] motion-reduce:transition-none"
+      className="pointer-events-none absolute bottom-0 z-20 h-[5px] rounded-t-[8px] transition-[left,width,background-color] duration-[700ms] ease-[cubic-bezier(0.45,0,0.55,1)] motion-reduce:transition-none"
       ref={(indicator) => {
       if (!indicator) return;
 
@@ -4161,15 +4216,16 @@ export function SalesPricingDetailsPage() {
 
 {/* راهنما پیش از تأیید برند */}
 {!confirmedBrandId && (
-  <p className="mt-10 text-center text-[16px] font-[300] text-[4141D9]">
+  <p className="mt-10 text-center text-[16px] font-[300] text-[#4141D9]">
     برای مشاهده بخش‌های پروموشن، ابتدا برند خود را انتخاب و تأیید کن.
   </p>
 )}
 
 {/* نمایش سکشن انتخاب‌شده */}
 {confirmedBrandId && (
-  <div className="w-full max-w-[1380px]">
+  <div ref={promotionPanelsRef} className="pricing-promotion-panels w-full max-w-[1380px]">
     <section
+      className="pricing-sales-growth-panel"
       aria-label="رشد فروش"
       hidden={activeSection !== "sales-growth"}
     >
@@ -4206,13 +4262,14 @@ export function SalesPricingDetailsPage() {
       aria-label="قرعه کشی"
       hidden={activeSection !== "lottery"}
     >
+    <div className="mt-10 flex w-full max-w-[1380px] flex-col gap-10">
     <LotteryRadialGaugeBox isActive={activeSection === "lottery"} />
 
-<div className="mt-10 flex w-full max-w-[1380px] flex-col gap-2">
+<div className="flex w-full flex-col gap-2">
   <div
-    className="w-full rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
+    className="w-full rounded-[30px] border border-gray-100 bg-white p-5 shadow-sm sm:p-10"
     dir="rtl"
-    style={{ ...F, padding: "40px" }}
+    style={F}
   >
     {/* Header */}
     <div className="flex flex-col items-start gap-2">
@@ -4237,6 +4294,7 @@ export function SalesPricingDetailsPage() {
 </div>
 
 
+    </div>
     </section>
 
   <section
@@ -4245,7 +4303,7 @@ export function SalesPricingDetailsPage() {
   >
     {/* کل باکس «رشد کن و شانس قرعه‌کشی بگیر» */}
 
-    <div className={`${code === "6135" ? "mt-12" : "mt-6"}`}>
+    <div className="mt-6">
       <DecorChallengeUploadBox />
     </div>
   </section>
@@ -4297,7 +4355,6 @@ export function SalesPricingDetailsPage() {
           </DialogContent>
         </Dialog>
       </main>
-      <Footer />
     </div>
   );
 }

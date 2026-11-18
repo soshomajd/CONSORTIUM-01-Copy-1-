@@ -82,7 +82,7 @@ const CITIES_BY_OSTAN: Record<string, string[]> = {
 export function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const userName = getUser() ?? "سهیل شکوهی";
+  const userName = getUser() ?? "کاربر سایت";
   const [firstName, lastName] = userName.split(" ");
 
   const [shippingCo, setShippingCo] = useState("");

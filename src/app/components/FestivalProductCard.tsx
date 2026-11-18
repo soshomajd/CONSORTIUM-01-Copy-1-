@@ -1,3 +1,4 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import React from "react"
 import { Package } from "lucide-react"
 import { Link } from "react-router"
@@ -35,6 +36,7 @@ export function FestivalProductCard({
   timer,
   amazingTypography = false,
   hasIncentive = false,
+  fastDelivery = false,
   fluid = false,
   showDiscount = true,
   unavailable = false,
@@ -50,6 +52,7 @@ export function FestivalProductCard({
   timer?: [string, string, string]
   amazingTypography?: boolean
   hasIncentive?: boolean
+  fastDelivery?: boolean
   fluid?: boolean
   showDiscount?: boolean
   unavailable?: boolean
@@ -117,7 +120,7 @@ export function FestivalProductCard({
             ...F,
           }}
         >
-          <span style={{ color: "#fbbf24" }}>★</span> 4/2 ( 15 دیدگاه )
+          <span style={{ color: "#fbbf24" }}>★</span> ۴/۲ ( ۱۵ دیدگاه )
         </span>}
         {showDiscount && (
           <div
@@ -143,7 +146,7 @@ export function FestivalProductCard({
                 ...F,
               }}
             >
-              {item.discount}٪
+              {toPersianDigits(item.discount)}٪
             </span>
           </div>
         )}
@@ -178,7 +181,7 @@ export function FestivalProductCard({
               ...F,
             }}
           >
-            {title}
+            {toPersianDigits(title)}
           </p>
         </div>
 
@@ -218,7 +221,7 @@ export function FestivalProductCard({
           </span>
         </div>
 
-        {showDiscount && hasIncentive && (
+        {hasIncentive && (
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <span
               style={{
@@ -257,6 +260,13 @@ export function FestivalProductCard({
           </div>
         )}
 
+        {fastDelivery && (
+          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: amazingTypography ? 13 : 11, fontWeight: amazingTypography ? 400 : 700, color: PINK, ...F }}>
+            <PickupTruckIcon size={12} />
+            <span>ارسال سریع به سراسر ایران</span>
+          </span>
+        )}
+
         {showDiscount && timer && (
           <>
             <div style={{ height: 1, backgroundColor: "#f3f4f6" }} />
@@ -288,7 +298,7 @@ export function FestivalProductCard({
                         ...F,
                       }}
                     >
-                      {unit}
+                      {toPersianDigits(unit)}
                     </span>
                     {index < 2 && (
                       <span

@@ -1,3 +1,4 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import { ProductOfferBenefits } from "./ProductOfferBenefits"
 import { useEffect, useState } from "react"
 import { Clock } from "lucide-react"
@@ -22,7 +23,7 @@ export function FlashDealCard() {
   const hours = Math.floor(timeLeft / 3600)
   const minutes = Math.floor((timeLeft % 3600) / 60)
   const seconds = timeLeft % 60
-  const formatTime = (value: number) => String(value).padStart(2, "0")
+  const formatTime = (value: number) => toPersianDigits(String(value).padStart(2, "0"))
 
   const handleAddToCart = () => {
     addToCart(1)
@@ -54,7 +55,7 @@ export function FlashDealCard() {
         />
         <div className="min-w-0 w-full">
           <p className="text-[15px] font-extrabold leading-6 text-gray-800">
-            تكسچر(1) 202001
+            تكسچر(۱) ۲۰۲۰۰۱
           </p>
         </div>
       </div>

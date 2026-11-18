@@ -12,12 +12,6 @@ import {
   PopoverTrigger,
 } from "@/app/components/ui/popover"
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/app/components/ui/dialog"
 import { homeAssets as assets } from "@/app/components/home/assets"
 import "@/styles/home-reference.css"
 
@@ -48,7 +42,6 @@ export function Header() {
   const [cartItems, setCartItems] = useState(getCart)
   const [cartOpen, setCartOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [info, setInfo] = useState<"about" | "contact" | null>(null)
   const user = getUser()
   useEffect(() => {
     const openMenu = () => {
@@ -88,7 +81,6 @@ export function Header() {
     }
   }, [])
   useEffect(() => {
-    setInfo(null)
     setCartOpen(false)
     setCartItems(getCart())
     setCartCount(getCartCount())
@@ -169,10 +161,10 @@ export function Header() {
                 برند
               </button>
               <Link to="/products">خرید محصولات</Link>
-              <button type="button" onClick={() => setInfo("about")}>
+              <button type="button">
                 درباره‌ما
               </button>
-              <button type="button" onClick={() => setInfo("contact")}>
+              <button type="button">
                 تماس باما
               </button>
               <Link to="/discounts">تخفیفات</Link>
@@ -306,29 +298,6 @@ export function Header() {
         user={user}
       />
 
-      <Dialog
-        open={info !== null}
-        onOpenChange={(open) => {
-          if (!open) setInfo(null)
-        }}
-      >
-        <DialogContent dir="rtl" className="reference-home-dialog rounded-3xl">
-          <DialogTitle>
-            {info === "about" ? "درباره کنسرسیوم" : "تماس با ما"}
-          </DialogTitle>
-          <DialogDescription>
-            {info === "about"
-              ? "کنسرسیوم، خانهٔ برندهای کاغذ دیواری؛ فضایی برای مشاهدهٔ آلبوم‌ها، انتخاب طرح و ثبت سفارش از برندهای عضو."
-              : "برای پیگیری سفارش‌ها و ارتباط با پشتیبانی، از پنل کاربری وارد بخش سفارش‌ها شوید."}
-          </DialogDescription>
-          <Link
-            to={info === "about" ? "/products" : "/profile"}
-            className="home-dialog-action"
-          >
-            {info === "about" ? "مشاهده محصولات" : "ورود به پنل کاربری"}
-          </Link>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

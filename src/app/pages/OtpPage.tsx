@@ -20,7 +20,7 @@ function formatTimer(secs: number) {
 export function OtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const phone: string = (location.state as { phone?: string })?.phone ?? "09123456789";
+  const phone: string = (location.state as { phone?: string })?.phone ?? "0910000000";
 
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(109); // 1:49
@@ -32,7 +32,7 @@ export function OtpPage() {
   }, [timer]);
 
   const handleConfirm = () => {
-    setUser("سهیل شکوهی");
+    setUser("کاربر سایت");
     navigate("/");
   };
 

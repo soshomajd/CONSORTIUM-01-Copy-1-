@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { Fragment, useState, useRef, useEffect } from "react";
 import type * as React from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
   User, ShoppingBag, Bell, Star, Zap, CornerUpLeft, List,
-  CreditCard, Wallet, LogOut, Search, CheckCircle2,
+  CreditCard, Wallet, LogOut, Search, CheckCircle2, Plus, Minus, Check,
   Megaphone, Tag, Package, Menu, X, Heart, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Printer, BarChart2, Trash2,
   ClipboardList, RefreshCw, Truck, Home, ShoppingCart, Clock,
 } from "lucide-react";
@@ -43,6 +43,8 @@ const menuItems = [
   { key: "logout",    label: "خروج از حساب کاربری",      icon: LogOut,       color: "",              group: "" },
 ];
 
+const visibleMenuItems = menuItems.filter(({ key }) => key !== "salesdb" && key !== "single-roll");
+
 // ─── Orders ────────────────────────────────────────────────────────────────
 
 type Order = {
@@ -53,7 +55,6 @@ type Order = {
 
 const mockOrders: Order[] = [
   { id: "141405191", siteCode: "100002", deliveryCode: "DL-۸۸۱۲",  amount: 1500000, items: 1, date: "۱۴۰۵/۴/۹",  delivery: "چهار شنبه ۱۰ تیر ۱۴۰۵",   status: "paid",      tab: "current"   },
-  { id: "141405088", siteCode: "100120", deliveryCode: "DL-۷۷۴۵",  amount: 2090000, items: 1, date: "۱۴۰۵/۴/۲۱", delivery: "یک شنبه ۲۱ تیر ۱۴۰۵",     status: "confirmed", tab: "review"    },
   { id: "141405045", siteCode: "100118", deliveryCode: "DL-۷۷۱۲",  amount: 980000,  items: 2, date: "۱۴۰۵/۴/۱۸", delivery: "جمعه ۱۹ تیر ۱۴۰۵",         status: "confirmed", tab: "review"    },
   { id: "141405012", siteCode: "100105", deliveryCode: "DL-۷۶۹۰",  amount: 3200000, items: 3, date: "۱۴۰۵/۴/۱۵", delivery: "سه شنبه ۱۶ تیر ۱۴۰۵",      status: "confirmed", tab: "review"    },
   { id: "141404990", siteCode: "100098", deliveryCode: "DL-۷۵۳۳",  amount: 1750000, items: 1, date: "۱۴۰۵/۳/۲۸", delivery: "شنبه ۳۰ خرداد ۱۴۰۵",        status: "confirmed", tab: "review"    },
@@ -64,13 +65,46 @@ const mockOrders: Order[] = [
 
 const orderTabs = [
   { key: "current",   label: "جاری",         count: 1  },
-  { key: "review",    label: "در حال بررسی", count: 13 },
+  { key: "review",    label: "در حال بررسی", count: 12 },
   { key: "delivered", label: "تحویل شده",    count: 2  },
   { key: "returned",  label: "مرجوع شده",    count: 0  },
   { key: "cancelled", label: "لغو شده",      count: 1  },
 ];
 
 function fmt(n: number) { return n.toLocaleString("fa-IR"); }
+
+function ProfileSectionHeading({ children, className = "mb-5" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`flex min-w-0 items-center justify-between gap-3 ${className}`}>
+      <div className="min-w-0">{children}</div>
+      <button type="button" onClick={openMobileProfileMenu} aria-label="باز کردن منوی پروفایل" aria-haspopup="dialog" className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C] lg:hidden">
+        <Menu size={20} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function ProfilePagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {
+  if (totalPages <= 1) return null;
+  const arrowClass = "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-0 text-[#CA165C] transition-opacity disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]";
+
+  return (
+    <nav aria-label="صفحه‌بندی" className="mt-6 flex flex-wrap items-center justify-center gap-1.5" dir="rtl" style={F}>
+      <button type="button" aria-label="صفحه قبل" disabled={page === 1} onClick={() => onPageChange(page - 1)} className={arrowClass}>
+        <ChevronRight size={16} aria-hidden="true" />
+      </button>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map(number => (
+        <button key={number} type="button" aria-label={`صفحه ${fmt(number)}`} aria-current={page === number ? "page" : undefined} onClick={() => onPageChange(number)}
+          className={`flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#CA165C] p-0 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] ${page === number ? "bg-[#CA165C] font-black text-white" : "bg-white font-normal text-[#CA165C]"}`}>
+          {fmt(number)}
+        </button>
+      ))}
+      <button type="button" aria-label="صفحه بعد" disabled={page === totalPages} onClick={() => onPageChange(page + 1)} className={arrowClass}>
+        <ChevronLeft size={16} aria-hidden="true" />
+      </button>
+    </nav>
+  );
+}
 
 function StatusBadge({ status }: { status: Order["status"] }) {
   const map: Record<Order["status"], { label: string; cls: string }> = {
@@ -218,14 +252,14 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
   const s = statusMap[order.status];
   return (
     <div className="pb-2 sm:pb-3 lg:pb-4">
-      <div className="relative border border-gray-300 rounded-2xl bg-white hover:shadow-sm transition-shadow overflow-hidden">
+      <div className="relative border border-gray-300 rounded-2xl bg-white shadow-sm overflow-hidden">
         <div className="p-4 sm:p-5" dir="rtl">
           {/* Title row: order code + status badge */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
             <span className="text-sm font-semibold sm:text-base sm:font-black" style={{ color: "#1E2939", ...F }}>
               کد سفارش: {order.id}
             </span>
-            <span className="inline-block rounded-full border border-[#370080] px-3 py-1 text-sm font-medium sm:font-light" style={{ backgroundColor: "#fff", color: "#370080", ...F }}>
+            <span className="inline-block rounded-full px-3 py-1 text-sm font-semibold sm:text-base sm:font-black" style={{ backgroundColor: "#fff", color: "#370080", ...F }}>
               {s.label}
             </span>
           </div>
@@ -334,18 +368,18 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
             </div>
             {/* Buttons — left */}
             <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:self-auto">
-              <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#ffffff", color: "#370080", border: "1px solid #370080", ...F }}>مشاهده صورتحساب</button>
+              <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm" style={{ backgroundColor: "#ffffff", color: "#370080", border: "1px solid #370080", ...F }}>مشاهده صورتحساب</button>
               {order.status === "delivered" && (
                 <button onClick={() => setSurveyOpen(o => !o)}
-                  className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-4 sm:py-2.5 sm:text-sm"
+                  className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm"
                   style={{ backgroundColor: "#370080", color: "#fff", ...F }}>
                   {surveyOpen ? "بستن نظرسنجی" : "نظرسنجی"}
                 </button>
               )}
-              {showPay && <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-2.5 py-2 sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold text-white transition-colors sm:px-4 sm:py-2.5 sm:text-sm" style={{ backgroundColor: "#370080", ...F }}>پرداخت</button>}
+              {showPay && <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold text-white transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm" style={{ backgroundColor: "#370080", ...F }}>پرداخت</button>}
               {order.tab !== "cancelled" && order.tab !== "delivered" && (
                 <Button
-                  className="h-8 min-h-8 rounded-lg bg-brand-pink px-2.5 py-2 text-xs font-medium sm:font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:h-auto sm:min-h-0 sm:px-4 sm:py-2.5 sm:text-sm"
+                  className="h-8 min-h-8 rounded-lg bg-brand-pink px-[6px] py-[4.8px] text-xs font-medium sm:font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:h-auto sm:min-h-0 sm:px-[9.6px] sm:py-[6px] sm:text-sm"
                   style={F}
                 >
                   لغو سفارش
@@ -387,21 +421,18 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
           background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
         }
       `}</style>
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <ProfileSectionHeading>
         <h1 className="text-right text-base font-semibold text-gray-900 sm:text-xl sm:font-black" style={F}>سفارش‌ها</h1>
-        <button type="button" onClick={openMobileProfileMenu} aria-label="باز کردن منوی پروفایل" aria-haspopup="dialog" className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C] lg:hidden">
-          <Menu size={20} strokeWidth={1.8} aria-hidden="true" />
-        </button>
-      </div>
+      </ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
       <div className="flex items-center border border-gray-300 rounded-xl px-4 py-2 gap-2 mb-6 bg-white sm:py-3">
         <Search size={16} className="text-gray-400 shrink-0" />
         <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="min-w-0 flex-1 bg-transparent text-sm font-light text-gray-400 outline-none text-right placeholder:text-gray-400 sm:font-normal" style={{ ...F, fontSize: 14 }} />
       </div>
-      <div className="mb-6 flex flex-wrap items-center justify-start gap-1.5 sm:gap-2">
+      <div className="mb-6 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
         {orderTabs.map(({ key, label, count }) => (
           <button key={key} onClick={() => { setActiveTab(key); setPage(1); }}
-            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-sm font-medium transition-all sm:font-semibold sm:gap-1.5 sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
+            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-[6px] py-[3.6px] text-sm font-medium transition-all sm:font-semibold sm:gap-1.5 sm:px-[7.2px] sm:py-[4.8px] ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
             style={F}>
             {label}
             <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] sm:h-5 sm:w-5 sm:text-xs"
@@ -420,30 +451,7 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
           ) : paginatedOrders.map(o => <OrderCard key={o.id} order={o} showPay={activeTab === "review"} />)}
         </div>
       )}
-      {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2" dir="ltr">
-          {Array.from({ length: totalPages }, (_, index) => {
-            const pageNumber = index + 1;
-            const isActive = page === pageNumber;
-            return (
-              <button
-                key={pageNumber}
-                type="button"
-                onClick={() => setPage(pageNumber)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-bold transition-colors"
-                style={{
-                  backgroundColor: isActive ? "#370080" : "#fff",
-                  borderColor: isActive ? "transparent" : "#370080",
-                  color: isActive ? "#fff" : "#370080",
-                  ...F,
-                }}
-              >
-                {pageNumber.toLocaleString("fa-IR")}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
@@ -498,13 +506,13 @@ function CouponCard({ coupon }: { coupon: typeof PROFILE_COUPONS[0] }) {
           <Tag size={15} style={{ color: "#fff" }} />
         </div>
         <div className="text-right flex-1" style={F}>
-          <p className="font-bold text-gray-900 text-[14px]">{coupon.title} — {coupon.discount}٪ تخفیف</p>
-          <p className="text-gray-400 mt-0.5 text-[13px]">{coupon.desc}</p>
+          <p className="font-bold text-gray-900 text-[15px]">{coupon.title} — {coupon.discount}٪ تخفیف</p>
+          <p className="text-gray-400 mt-0.5 text-[15px]">{coupon.desc}</p>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text- mb-[0px]gray-400 text-[13px] mx-[0px] mt-[-30px] mb-[0px] text-[#99a1af]" style={F}>انقضا: {coupon.expiry}</span>
+            <span className="text- mb-[0px]gray-400 text-[15px] mx-[0px] mt-[-30px] mb-[0px] text-[#99a1af]" style={F}>انقضا: {coupon.expiry}</span>
             <button
               onClick={handleCopy}
-              className="font-black rounded-md transition-all text-[13px]"
+              className="font-black rounded-md transition-all text-[15px]"
               style={{
                 padding: "10px 10px",
                 backgroundColor: copied ? "#CA165C" : "#fff",
@@ -528,7 +536,7 @@ function NotificationsSection() {
 
   return (
     <div>
-      <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>اعلانات</h1>
+      <ProfileSectionHeading><h1 className="text-right text-[15px] font-black text-gray-900" style={F}>اعلانات</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
       {/* Filter tabs — right aligned (justify-start = visual right in RTL) */}
@@ -537,7 +545,7 @@ function NotificationsSection() {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-sm font-semibold transition-all sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
+            className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[15px] font-semibold transition-all sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
             style={F}
           >
             {label}
@@ -554,7 +562,7 @@ function NotificationsSection() {
         /* Notif list */
         <div className="flex flex-col divide-y divide-gray-100">
           {filtered.length === 0 ? (
-            <div className="text-center py-16"><Bell size={40} className="text-gray-200 mx-auto mb-3" /><p className="text-gray-400 text-sm" style={F}>اعلانی وجود ندارد</p></div>
+            <div className="text-center py-16"><Bell size={40} className="text-gray-200 mx-auto mb-3" /><p className="text-gray-400 text-[15px]" style={F}>اعلانی وجود ندارد</p></div>
           ) : filtered.map(n => (
               <div key={n.id} className={`flex items-center justify-start py-4 ${!n.read ? "opacity-100" : "opacity-60"}`}>
                 <div className="flex items-start gap-2">
@@ -562,9 +570,9 @@ function NotificationsSection() {
                     <Megaphone size={15} style={{ color: "#370080" }} />
                   </div>
                   <div className="text-right" style={F}>
-                    <p className="text-sm font-semibold text-[#1E2939]">{n.title}</p>
-                    <p className="mt-0.5 text-[13px] font-normal text-[#6A7282]">{n.body}</p>
-                    <p className="mt-1 text-[13px] font-normal text-[#6A7282]">{n.date}</p>
+                    <p className="text-[15px] font-semibold text-[#1E2939]">{n.title}</p>
+                    <p className="mt-0.5 text-[15px] font-normal text-[#6A7282]">{n.body}</p>
+                    <p className="mt-1 text-[15px] font-normal text-[#6A7282]">{n.date}</p>
                   </div>
                 </div>
               </div>
@@ -643,21 +651,21 @@ function QuickOrderSection() {
 
   return (
     <div>
-      <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>سفارش سریع</h1>
+      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>سفارش سریع</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
-      <div className="flex gap-5 items-start flex-col lg:flex-row">
+      <div className="flex min-w-0 flex-col items-stretch gap-4 sm:gap-5 xl:flex-row xl:items-start">
 
         {/* RIGHT: category sidebar (first in RTL DOM) */}
-        <div className="w-full shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-[#FCFCFD]/50 lg:w-44">
-          <button type="button" onClick={() => setCategoryOpen(open => !open)} aria-expanded={categoryOpen} aria-controls="profile-quick-categories" className="flex min-h-12 w-full items-center justify-between px-4 text-right text-sm font-semibold text-[#370080] lg:hidden">دسته‌بندی<ChevronDown size={17} className={categoryOpen ? "rotate-180" : ""} /></button>
-          <div className="hidden lg:block border-b border-gray-200 px-4 py-3 text-right text-xs font-semibold text-[#1E2939]" style={F}>دسته‌بندی</div>
-          <div id="profile-quick-categories" className={categoryOpen ? "block" : "hidden lg:block"}>
+        <div className="w-full min-w-0 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-[#FCFCFD]/50 xl:w-44">
+          <button type="button" onClick={() => setCategoryOpen(open => !open)} aria-expanded={categoryOpen} aria-controls="profile-quick-categories" className="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-right text-sm font-semibold leading-6 text-[#1E2939] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#CA165C] xl:hidden" style={F}><span className="min-w-0 flex-1 text-right">دسته‌بندی</span><ChevronDown size={16} className={`shrink-0 text-[#6A7282] transition-transform ${categoryOpen ? "rotate-180" : ""}`} aria-hidden="true" /></button>
+          <div className="hidden border-b border-gray-200 px-4 py-3 text-right text-sm font-semibold leading-6 text-[#1E2939] xl:block" style={F}>دسته‌بندی</div>
+          <div id="profile-quick-categories" className={categoryOpen ? "block border-t border-gray-200 xl:border-t-0" : "hidden xl:block"}>
           {categories.map(cat => (
             <div key={cat.key}>
               <button
                 onClick={() => cat.children ? setExpandedCat(expandedCat === cat.key ? null : cat.key) : null}
-                className="flex w-full items-center justify-between px-4 py-2.5 text-right text-xs font-light text-[#6A7282]"
+                className="flex min-h-11 w-full items-center justify-between gap-2 px-4 py-2.5 text-right text-[13px] font-light leading-6 text-[#6A7282]"
                 style={F}
               >
                 <span className="flex-1 text-right">{cat.label}</span>
@@ -666,7 +674,7 @@ function QuickOrderSection() {
               {cat.children && expandedCat === cat.key && (
                 <div className="bg-white border-t border-gray-100">
                   {cat.children.map(child => (
-                    <button key={child} className="w-full px-6 py-2 text-right text-xs font-light text-[#6A7282]" style={F}>
+                    <button key={child} className="min-h-10 w-full px-6 py-2 text-right text-[13px] font-light leading-6 text-[#6A7282]" style={F}>
                       {child}
                     </button>
                   ))}
@@ -680,14 +688,19 @@ function QuickOrderSection() {
         {/* LEFT: product table */}
         <div className="w-full flex-1 min-w-0">
           {/* Toolbar */}
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="flex-1 flex items-center border border-gray-300 rounded-xl px-3 py-2.5 gap-2 bg-white min-w-[180px]">
-              <Search size={14} className="text-gray-400 shrink-0" />
-              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} type="text" placeholder="جستجو در نام یا کد طرح" className="min-w-0 flex-1 text-base bg-transparent outline-none sm:text-xs text-right placeholder-gray-400" style={F} />
+          <div className="mb-4 flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className="flex h-11 min-h-11 w-full min-w-0 flex-1 items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
+              <Search size={16} className="shrink-0 text-[#6A7282]" aria-hidden="true" />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} type="search" aria-label="جستجو در نام یا کد طرح" placeholder="جستجو در نام یا کد طرح" className="h-full w-full min-w-0 flex-1 bg-transparent text-right text-sm font-light leading-6 text-[#6A7282] outline-none placeholder:text-[#6A7282]" style={{ ...F, fontSize: 14 }} />
             </div>
-            <label className="flex items-center gap-2 cursor-pointer shrink-0" style={F}>
-              <span className="text-[13px] font-semibold text-[#370080]">فقط موجودها</span>
+            <label htmlFor="quick-only-stock" className="flex min-h-8 shrink-0 cursor-pointer items-center gap-2 self-end sm:self-auto" style={F}>
+              <span className="text-[13px] font-semibold text-[#CA165C]">فقط موجودها</span>
               <button
+                id="quick-only-stock"
+                type="button"
+                role="switch"
+                aria-checked={onlyStock}
+                aria-label="فقط محصولات موجود"
                 onClick={() => { setOnlyStock(o => !o); setPage(1); }}
                 className={`w-10 h-5 rounded-full transition-colors relative ${onlyStock ? "bg-[#CA165C]" : "bg-[#F3F4F6]"}`}
               >
@@ -697,48 +710,48 @@ function QuickOrderSection() {
           </div>
 
           {/* Table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            {/* Header */}
-            <div className="hidden grid-cols-4 bg-gray-100 sm:grid text-center text-sm font-bold text-[#1E2939]" style={F}>
-              <div className="px-3 py-[15px] text-right">نام محصول</div>
-              <div className="px-3 py-[15px]">مقدار</div>
-              <div className="px-3 py-[15px]">موجودی</div>
-              <div className="px-3 py-[15px]">قیمت</div>
-            </div>
-
-            {paginated.length === 0 ? (
-              <div className="py-12 text-center text-sm text-gray-400" style={F}>محصولی یافت نشد</div>
-            ) : paginated.map((p, i) => (
-              <div key={p.id} className={`grid grid-cols-2 items-center text-center text-xs border-t sm:grid-cols-4 border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`} style={F}>
-                <div className="col-span-2 break-words px-4 pb-2 pt-4 text-right text-sm font-medium text-[#370080] sm:col-span-1 sm:px-3 sm:py-[15px] sm:font-light sm:text-[#6A7282]">{p.name}</div>
-                <div className="col-span-2 flex items-center justify-between gap-3 px-4 py-3 sm:col-span-1 sm:justify-center sm:gap-1.5 sm:px-2 sm:py-[15px]">
-                  <span className="text-xs text-[#6A7282] sm:hidden">مقدار</span>
-                  <div className="flex items-center gap-1.5">
-                  <button onClick={() => { const q = (quantities[p.id] ?? 0) + 1; setQty(p.id, q); if (p.inStock) addToCart(1); }}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-6 sm:w-6 border border-gray-300 text-sm font-bold text-gray-600 transition-colors hover:border-[#370080] hover:bg-[#370080] hover:text-white">+</button>
-                  <span className="w-6 text-center text-sm font-light text-[#6A7282]">{quantities[p.id] ?? 0}</span>
-                  <button onClick={() => { if ((quantities[p.id] ?? 0) > 0) { setQty(p.id, (quantities[p.id] ?? 0) - 1); if (p.inStock) addToCart(-1); } }}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-6 sm:w-6 border border-gray-300 text-sm font-bold text-gray-600 transition-colors hover:border-[#370080] hover:bg-[#370080] hover:text-white">−</button>
-                </div>
-                </div>
-                <div className={`px-3 py-[15px] text-sm font-light ${p.inStock ? "text-[#370080]" : "text-[#CA165C]"}`}><span className="mb-2 block text-xs text-[#6A7282] sm:hidden">موجودی:</span>{p.inStock ? "دارد" : "ندارد"}</div>
-                <div className="px-4 pb-4 pt-1 text-left text-sm font-semibold text-[#370080] sm:col-span-1 sm:px-3 sm:py-[15px] sm:text-center sm:font-light sm:text-[#6A7282]"><span className="ml-2 text-xs font-normal text-[#6A7282] sm:hidden">قیمت:</span>{p.price ? p.price.toLocaleString("fa-IR") : "−"}</div>
-              </div>
-            ))}
+          <div className="overflow-hidden rounded-xl border border-gray-200">
+            <table className="w-full table-fixed border-collapse text-center" style={F}>
+              <caption className="sr-only">محصولات سفارش سریع</caption>
+              <colgroup>
+                <col className="w-[49%] sm:w-[36%]" />
+                <col className="w-[34%] sm:w-[26%]" />
+                <col className="w-[17%] sm:w-[16%]" />
+                <col className="hidden sm:table-column sm:w-[22%]" />
+              </colgroup>
+              <thead className="bg-[#F4F4F6] text-xs font-semibold leading-5 text-[#1E2939] sm:text-sm">
+                <tr>
+                  <th scope="col" className="px-2 py-2.5 text-right font-semibold sm:px-3 sm:py-3"><span className="sm:hidden">محصول و قیمت</span><span className="hidden sm:inline">نام محصول</span></th>
+                  <th scope="col" className="px-1 py-2.5 font-semibold sm:px-2 sm:py-3">مقدار</th>
+                  <th scope="col" className="px-0 py-2.5 font-semibold sm:px-2 sm:py-3">موجودی</th>
+                  <th scope="col" className="hidden px-1 py-2.5 font-semibold sm:table-cell sm:px-2 sm:py-3">قیمت</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr><td colSpan={4} className="px-3 py-10 text-center text-sm text-[#6A7282]">محصولی یافت نشد</td></tr>
+                ) : paginated.map((p, i) => (
+                  <tr key={p.id} className={`border-t border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}>
+                    <th scope="row" className="break-words px-2 py-2.5 text-right text-xs font-normal leading-5 text-[#6A7282] sm:px-3 sm:py-3.5 sm:text-sm sm:font-light"><span className="block">{p.name}</span><span className="mt-1 block whitespace-nowrap text-xs font-light tabular-nums leading-5 sm:hidden"><span className="sr-only">قیمت: </span>{p.price ? fmt(p.price) : "−"}</span></th>
+                    <td className="px-0.5 py-2.5 sm:px-2 sm:py-3.5">
+                      <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                        <button type="button" aria-label={`افزایش تعداد ${p.name}`} onClick={() => { const q = (quantities[p.id] ?? 0) + 1; setQty(p.id, q); if (p.inStock) addToCart(1); }}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[#6A7282] transition-colors hover:border-[#370080] hover:bg-[#370080] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#370080] sm:size-8"><Plus size={14} strokeWidth={1.5} aria-hidden="true" /></button>
+                        <span aria-live="polite" aria-atomic="true" className="min-w-3.5 text-center text-xs font-normal tabular-nums text-[#6A7282] sm:min-w-5 sm:text-sm sm:font-light">{fmt(quantities[p.id] ?? 0)}</span>
+                        <button type="button" aria-label={`کاهش تعداد ${p.name}`} disabled={(quantities[p.id] ?? 0) === 0} onClick={() => { if ((quantities[p.id] ?? 0) > 0) { setQty(p.id, (quantities[p.id] ?? 0) - 1); if (p.inStock) addToCart(-1); } }}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[#6A7282] transition-colors hover:border-[#370080] hover:bg-[#370080] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-white disabled:hover:text-[#6A7282] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#370080] sm:size-8"><Minus size={14} strokeWidth={1.5} aria-hidden="true" /></button>
+                      </div>
+                    </td>
+                    <td className={`px-0.5 py-2.5 text-xs font-light leading-5 sm:px-2 sm:py-3.5 sm:text-sm ${p.inStock ? "text-[#370080]" : "text-[#CA165C]"}`}>{p.inStock ? "دارد" : "ندارد"}</td>
+                    <td className="hidden whitespace-nowrap px-1 py-2.5 text-xs font-light tabular-nums leading-5 text-[#6A7282] sm:table-cell sm:px-2 sm:py-3.5 sm:text-sm">{p.price ? fmt(p.price) : "−"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2 mt-4 justify-end">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                <button key={n} onClick={() => setPage(n)}
-                  className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${page === n ? "bg-[#370080] text-white" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-400"}`}
-                  style={F}>
-                  {n.toLocaleString("fa-IR")}
-                </button>
-              ))}
-            </div>
-          )}
+          <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
 
       </div>
@@ -761,9 +774,9 @@ function WishlistSection() {
 
   return (
     <div>
-      <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>
+      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>
         لیست علاقه مندی ها <span className="text-gray-400 font-normal text-base">({items.length})</span>
-      </h1>
+      </h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
       {items.length === 0 ? (
@@ -778,7 +791,7 @@ function WishlistSection() {
               {/* Text — right side (first in RTL) */}
               <div className="flex-1 text-right" style={F}>
                 <p className="text-sm font-bold text-gray-800">{item.name} {item.code}</p>
-                <p className="text-sm text-gray-500 mt-1">- {item.price} تومان</p>
+                <p className="text-sm text-gray-500 mt-2.5">- {item.price} تومان</p>
               </div>
               {/* Image + X — left side (last in RTL) */}
               <div className="relative shrink-0">
@@ -873,7 +886,7 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
 
   return (
     <div>
-      <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>ثبت درخواست مرجوعی</h1>
+      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>ثبت درخواست مرجوعی</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
       {/* Shipping method and product search */}
@@ -972,7 +985,7 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
                 <button className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: "#CA165C", ...F }}>
                   <span>↑</span><span>بارگذاری تصویر کالا</span>
                 </button>
-                <span className="text-center text-[11px] leading-tight text-gray-400" style={F}>PNG و JPG — حداکثر ۵ مگابایت</span>
+                <span className="text-center text-[13px] leading-5 text-gray-400" style={F}>PNG و JPG — حداکثر ۵ مگابایت</span>
               </div>
 
               {/* Product name — middle, grows */}
@@ -980,9 +993,9 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
 
               {/* Qty controls */}
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => setQty(item.product.id, item.qty - 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border border-gray-300 text-lg leading-none text-[#1E2939] hover:bg-gray-100">−</button>
-                <span className="w-6 text-center text-sm font-bold text-[#6A7282]" style={F}>{item.qty.toLocaleString("fa-IR")}</span>
-                <button onClick={() => setQty(item.product.id, item.qty + 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border border-gray-300 text-lg leading-none text-[#1E2939] hover:bg-gray-100">+</button>
+                <button type="button" aria-label={`کاهش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty - 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border-[1.5px] border-[#CA165C] text-[#CA165C] hover:bg-[#CA165C]/5"><Minus size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></button>
+                <span className="w-6 text-center text-sm font-bold text-[#CA165C]" style={F}>{item.qty.toLocaleString("fa-IR")}</span>
+                <button type="button" aria-label={`افزایش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty + 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border-[1.5px] border-[#CA165C] text-[#CA165C] hover:bg-[#CA165C]/5"><Plus size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></button>
               </div>
 
               {/* حذف — last in DOM = visual LEFT in RTL */}
@@ -999,11 +1012,11 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
       )}
 
       {/* Shipping receipt upload */}
-      <div className="mb-6 flex flex-col items-start gap-1 rounded-2xl border border-dashed border-gray-300 bg-[#FCFCFD]/50 p-4 text-right">
+      <div className="mb-6 flex flex-col items-start gap-1 rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-right">
         <button className="text-sm font-semibold flex items-center gap-1" style={{ color: "#CA165C", ...F }}>
           <span>↑</span><span>بارگذاری رسید باربری</span>
         </button>
-        <span className="text-[11px] text-gray-400" style={F}>فرمت‌های مجاز PNG و JPG — حداکثر حجم ۵ مگابایت</span>
+        <span className="text-[13px] leading-5 text-gray-400" style={F}>فرمت‌های مجاز PNG و JPG — حداکثر حجم ۵ مگابایت</span>
       </div>
 
       {/* Submit — visual LEFT (flex justify-end in RTL) */}
@@ -1052,13 +1065,13 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
-    <div>
+    <div className="min-w-0 pb-4 sm:pb-6 lg:pb-8">
       {!embedded && (
         <>
-          <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>
+          <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>
             لیست درخواست های مرجوعی
-          </h1>
-          <div className="h-px bg-gray-100 mb-5" />
+          </h1></ProfileSectionHeading>
+          <div className="h-px bg-gray-200 mb-5" />
         </>
       )}
 
@@ -1068,79 +1081,85 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
           <p className="text-gray-400 text-sm" style={F}>درخواست مرجوعی‌ای ثبت نشده است</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white">
-          {/* Table header */}
-          <div className="hidden grid-cols-3 bg-gray-100 border-b sm:grid border-gray-200 px-4 py-3 text-center" style={F}>
-            <span className="text-sm font-semibold text-[#1E2939]">تعداد اقلام مرجوعی</span>
-            <span className="text-sm font-semibold text-[#1E2939]">تاریخ</span>
-            <span className="text-right text-sm font-semibold text-[#1E2939]">شناسه درخواست مرجوعی</span>
-          </div>
-
-          {allRequests.map((req, idx) => {
-            const isOpen = expanded === req.id;
-            const reqCode = req.id.replace("ret-", "MRJ-");
-            return (
-              <div key={req.id} className={idx > 0 ? "border-t border-gray-100" : ""}>
-                {/* Summary row — clickable */}
-                <button
-                  type="button"
-                  onClick={() => setExpanded(isOpen ? null : req.id)}
-                  className="w-full grid grid-cols-2 gap-3 items-center px-4 py-4 sm:grid-cols-3 sm:gap-0 bg-white hover:bg-gray-50 transition-colors text-center"
-                  style={F}
-                >
-                  <span className="text-sm font-light text-[#6A7282]"><span className="ml-1 text-xs sm:hidden">تعداد:</span>{req.items.length.toLocaleString("fa-IR")}</span>
-                  <span className="text-sm font-light text-[#6A7282]"><span className="ml-1 text-xs sm:hidden">تاریخ:</span>{req.date}</span>
-                  <div className="order-first col-span-2 flex items-center justify-between gap-2 rounded-xl bg-[#F8F6FC] px-3 py-2 sm:order-none sm:col-span-1 sm:bg-transparent sm:p-0">
-                    <span className="text-sm font-light text-[#6A7282]">{reqCode}</span>
-                    <ChevronDown size={16} className="text-gray-400 transition-transform" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
-                  </div>
-                </button>
-
-                {/* Expanded detail */}
-                <div style={{
-                  overflow: "hidden",
-                  maxHeight: isOpen ? 600 : 0,
-                  opacity: isOpen ? 1 : 0,
-                  transition: "max-height 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
-                }}>
-                  <div className="border-t border-gray-100 px-3 py-0 sm:px-[30px]" dir="rtl">
-                    {/* Section label */}
-                    <div className="px-5 pb-2 pt-4"><span className="text-sm font-light text-[#6A7282]" style={F}>اقلام مرجوعی</span></div>
-
-                    {/* Product rows */}
-                    <div className="flex flex-col divide-y divide-gray-100 mx-3 rounded-xl overflow-hidden border border-gray-100 bg-white mb-3">
-                      {req.items.map(item => (
-                        <div key={item.product.id} className="flex items-center gap-3 px-3 py-3 sm:px-[30px]">
-                          <div className="w-11 h-11 rounded-lg overflow-hidden border border-gray-100 shrink-0">
-                            <ImageWithFallback src={roll2} alt={item.product.name} className="w-full h-full object-cover" />
+        <div className="overflow-hidden rounded-2xl border border-gray-300 bg-white">
+          <table className="w-full table-fixed border-collapse text-right" style={F}>
+            <caption className="sr-only">لیست درخواست‌های مرجوعی</caption>
+            <colgroup><col className="w-1/3" /><col className="w-1/3" /><col className="w-1/3" /></colgroup>
+            <thead className="bg-[#F4F4F6] text-xs font-semibold leading-5 text-[#1E2939] sm:text-sm">
+              <tr>
+                <th scope="col" className="break-words px-3 py-3 text-right align-top font-semibold sm:px-6">تعداد اقلام مرجوعی</th>
+                <th scope="col" className="px-3 py-3 text-right align-top font-semibold sm:px-6">تاریخ</th>
+                <th scope="col" className="break-words px-3 py-3 text-right align-top font-semibold sm:px-6">شناسه درخواست مرجوعی</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allRequests.map(req => {
+                const isOpen = expanded === req.id;
+                const reqCode = req.id.replace("ret-", "MRJ-");
+                const detailId = `profile-${embedded ? "orders-" : ""}return-${req.id}`;
+                const toggle = () => setExpanded(isOpen ? null : req.id);
+                return (
+                  <Fragment key={req.id}>
+                    <tr data-return-summary={req.id} onClick={toggle} className="cursor-pointer border-t border-gray-200 bg-white transition-colors hover:bg-gray-50">
+                      <td className="px-3 py-2 text-right align-middle text-xs font-light tabular-nums text-[#CA165C] sm:px-6 sm:py-3 sm:text-sm">
+                        <button type="button" aria-expanded={isOpen} aria-controls={detailId} aria-label={`${isOpen ? "بستن" : "نمایش"} جزئیات درخواست ${reqCode}`} onClick={event => { event.stopPropagation(); toggle(); }}
+                          className="flex min-h-11 w-full items-center gap-2 rounded-lg bg-transparent p-0 text-right text-xs font-light text-[#CA165C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] sm:hidden">
+                          <ChevronDown size={12} className={`shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                          <span>{fmt(req.items.length)}</span>
+                        </button>
+                        <span className="hidden sm:inline">{fmt(req.items.length)}</span>
+                      </td>
+                      <td className="py-2 pl-1 pr-3 text-right align-middle text-xs font-light tabular-nums text-[#6A7282] sm:px-6 sm:py-3 sm:text-sm"><span dir="ltr" className="inline-block whitespace-nowrap">{req.date}</span></td>
+                      <td className="py-2 pl-0.5 pr-3 align-middle sm:px-6 sm:py-3">
+                        <span data-return-code dir="ltr" className="block min-w-0 break-all text-right text-xs font-light leading-5 text-[#6A7282] sm:hidden">{reqCode}</span>
+                        <button type="button" aria-expanded={isOpen} aria-controls={detailId} aria-label={`${isOpen ? "بستن" : "نمایش"} جزئیات درخواست ${reqCode}`} onClick={event => { event.stopPropagation(); toggle(); }}
+                          className="hidden min-h-11 w-full min-w-0 items-center justify-between gap-0 rounded-lg bg-transparent p-0 text-right text-xs font-light leading-5 text-[#6A7282] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] sm:flex sm:gap-2 sm:text-sm">
+                          <span data-return-code dir="ltr" className="min-w-0 break-all">{reqCode}</span>
+                          <ChevronDown size={12} className={`shrink-0 text-[#CA165C] transition-transform duration-300 sm:size-4 ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-return-detail={req.id}>
+                      <td colSpan={3} className="border-0 p-0">
+                        <div id={detailId} aria-hidden={!isOpen} className="grid transition-[grid-template-rows,opacity] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? "1fr" : "0fr", opacity: isOpen ? 1 : 0 }}>
+                          <div className="min-h-0 overflow-hidden">
+                            <div className="border-t border-gray-200 pb-8 pt-4">
+                              <p data-return-items-title className="mb-3 px-3 text-sm font-light leading-6 text-[#6A7282] sm:px-6">اقلام مرجوعی</p>
+                              <div className="relative bg-white py-px">
+                                <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 inset-x-3 rounded-xl border border-gray-200 sm:inset-x-6" />
+                                {req.items.map((item, index) => (
+                                  <div key={item.product.id} className="relative grid min-w-0 grid-cols-3 items-center">
+                                    {index > 0 && <span aria-hidden="true" className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gray-200 sm:inset-x-6" />}
+                                    <div className="col-span-2 flex min-w-0 items-center gap-2 py-2 pl-2 pr-5 sm:gap-3 sm:py-3 sm:pl-3 sm:pr-9">
+                                      <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 sm:size-11">
+                                        <ImageWithFallback src={roll2} alt={item.product.name} className="h-full w-full object-cover" />
+                                      </div>
+                                      <span className="min-w-0 break-words text-xs font-medium leading-5 text-[#1E2939] sm:text-sm sm:font-semibold">{item.product.name}</span>
+                                    </div>
+                                    <div className="min-w-0 px-3 py-2 text-right sm:px-6 sm:py-3">
+                                      <span data-return-item-quantity className="whitespace-nowrap rounded-lg border border-[#CA165C] bg-white px-2 py-1 text-xs font-semibold leading-5 text-[#CA165C]">{fmt(item.qty)} عدد</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="px-3 sm:px-6">
+                                <p className="mb-2 mt-4 text-sm font-light leading-6 text-[#6A7282]">رسید باربری</p>
+                                <div data-return-receipt className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
+                                  <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
+                                    <ImageWithFallback src={roll2} alt="رسید باربری" className="h-full w-full object-cover" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                            <span className="text-sm font-bold text-gray-800" style={F}>{item.product.name}</span>
-                          </div>
-                          <span
-                            className="shrink-0 rounded-lg lg:translate-x-[290px] px-2.5 py-1 text-xs font-black"
-                            style={{ backgroundColor: PURPLE + "10", color: PURPLE, ...F }}
-                          >
-                            {item.qty.toLocaleString("fa-IR")} عدد
-                          </span>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Shipping receipt */}
-                    <div className="px-5 pb-4">
-                      <span className="mb-2 ml-[30px] block text-sm font-light text-[#6A7282]" style={F}>رسید باربری</span>
-                      <div className="w-full max-w-[240px] sm:w-1/3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-                        <div className="h-32 w-full overflow-hidden rounded-xl border border-gray-100">
-                          <ImageWithFallback src={roll2} alt="رسید باربری" className="h-full w-full object-cover" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                      </td>
+                    </tr>
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -1372,6 +1391,7 @@ function WalletSection() {
   const [refundAmount, setRefundAmount] = useState("");
   const [selectedGateway, setSelectedGateway] = useState<"saman" | "parsian">("saman");
   const [amountError, setAmountError] = useState(false);
+  const [refundAmountError, setRefundAmountError] = useState(false);
   const [showAmountNotification, setShowAmountNotification] = useState(false);
   const [showInvalidCardNotification, setShowInvalidCardNotification] = useState(false);
   const [showCardHolderMismatchNotification, setShowCardHolderMismatchNotification] = useState(false);
@@ -1477,6 +1497,10 @@ function WalletSection() {
 
   const handleRefundRequest = () => {
     if (isSubmittingRefund) return;
+    if (!refundAmount) {
+      setRefundAmountError(true);
+      return;
+    }
     const selectedCard = bankCards.find(card => card.id === selectedBankCardId);
     const cardNumber = selectedCard?.number.replace(/\D/g, "");
     setIsSubmittingRefund(true);
@@ -1501,57 +1525,39 @@ function WalletSection() {
     <div>
       {/* Title + divider */}
       <div className="pb-4 mb-6 border-b border-gray-200">
-        <h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>کیف پول</h1>
+        <ProfileSectionHeading className=""><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>کیف پول</h1></ProfileSectionHeading>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:mb-6 sm:grid-cols-2 lg:mb-8">
-        <button
-          type="button"
-          onClick={() => {
-            setWalletAction("charge");
-            setShowNewCardInput(false);
-          }}
-          aria-pressed={walletAction === "charge"}
-          className={`group relative flex min-h-40 items-center justify-between overflow-hidden rounded-2xl bg-white p-6 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${walletAction === "charge" ? "border-2 border-[#370080]/30" : "border border-gray-100 hover:border-[#370080]/20"}`}
-          style={F}
-        >
-          <span className="flex items-center gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#370080]/8 text-[#370080] transition-colors group-hover:bg-[#370080] group-hover:text-white">
-              <Wallet size={23} strokeWidth={1.8} />
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-4 lg:mb-8">
+        {[
+          { action: "charge" as const, title: "افزایش موجودی", subtitle: "شارژ کیف پول", Icon: Wallet },
+          { action: "refund" as const, title: "عودت وجه", subtitle: "بازگشت مبلغ به کیف پول", Icon: RefreshCw },
+        ].map(({ action, title, subtitle, Icon }) => (
+          <button
+            key={action}
+            type="button"
+            data-wallet-action={action}
+            onClick={() => { setWalletAction(action); setShowNewCardInput(false); }}
+            aria-pressed={walletAction === action}
+            className={`group relative flex min-h-44 min-w-0 items-center justify-between gap-2 rounded-[20px] border bg-white p-3 text-[#1E2939] shadow-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E2939] sm:min-h-40 sm:gap-3 sm:rounded-[24px] sm:p-5 lg:p-6 ${walletAction === action ? "border-[#1E2939]" : "border-gray-300"}`}
+            style={F}
+          >
+            <span className="flex w-full min-w-0 flex-1 flex-col items-center gap-2 sm:flex-row sm:gap-3 lg:gap-4">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#CA165C] text-white sm:size-12 sm:rounded-2xl">
+                <Icon size={20} strokeWidth={1.8} className="sm:size-6" aria-hidden="true" />
+              </span>
+              <span className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-right">
+                <span className="min-h-12 break-words text-[15px] font-semibold text-[#1E2939] sm:min-h-0">{title}</span>
+                <span className="mt-0.5 min-h-10 break-words text-[15px] font-normal text-[#6A7282] sm:min-h-0">{subtitle}</span>
+              </span>
             </span>
-            <span className="flex flex-col items-start">
-              <span className="text-lg font-black text-[#370080]">افزایش موجودی</span>
-              <span className="mt-1 text-base font-[200] text-[#370080]">شارژ کیف پول</span>
-            </span>
-          </span>
-          <ChevronLeft size={20} className="text-[#370080]/45 transition-transform group-hover:-translate-x-1 group-hover:text-[#370080]" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setWalletAction("refund");
-            setShowNewCardInput(false);
-          }}
-          aria-pressed={walletAction === "refund"}
-          className={`group relative flex min-h-40 items-center justify-between overflow-hidden rounded-2xl bg-white p-6 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${walletAction === "refund" ? "border-2 border-[#370080]/30" : "border border-gray-100 hover:border-[#370080]/20"}`}
-          style={F}
-        >
-          <span className="flex items-center gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#370080]/8 text-[#370080] transition-colors group-hover:bg-[#370080] group-hover:text-white">
-              <RefreshCw size={23} strokeWidth={1.8} />
-            </span>
-            <span className="flex flex-col items-start">
-              <span className="text-lg font-black text-[#370080]">عودت وجه</span>
-              <span className="mt-1 text-sm font-[200] text-[#370080]">بازگشت مبلغ به کیف پول</span>
-            </span>
-          </span>
-          <ChevronLeft size={20} className="text-[#370080]/45 transition-transform group-hover:-translate-x-1 group-hover:text-[#370080]" />
-        </button>
+            <ChevronLeft size={20} className="hidden shrink-0 text-[#1E2939] transition-transform group-hover:-translate-x-1 sm:block" aria-hidden="true" />
+          </button>
+        ))}
       </div>
 
       {walletAction === "charge" && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6" dir="rtl">
+        <div className="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm sm:p-6" dir="rtl">
           <div className="mb-6">
             <label className="mb-2 flex items-center gap-2 text-right text-sm font-semibold text-[#1E2939]" style={F}>
               <span>مبلغ شارژ (تومان)</span>
@@ -1563,57 +1569,52 @@ function WalletSection() {
               onChange={event => handleAmountChange(event.target.value)}
               placeholder="لطفا مبلغ شارژ را وارد کنید"
               title="لطفا مبلغ شارژ را وارد کنید"
-              className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 ${amountError ? "border-[#CA165C] hover:border-[#CA165C] focus:border-[#CA165C]" : "border-gray-200 hover:border-[#370080]/35 focus:border-[#370080]"}`}
+              aria-invalid={amountError}
+              className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus-visible:bg-[#FCFCFD] focus-visible:ring-0 ${amountError ? "border-[#CA165C]" : "border-gray-200"}`}
               style={F}
             />
-            <p className="mt-2 text-left text-sm font-[200] text-[#CA165C]" style={F}>
+            <p className="mt-2 text-left text-sm font-normal text-[#CA165C]" style={F}>
               توجه: حداکثر مبلغ قابل شارژ ۴۰۰٬۰۰۰٬۰۰۰ تومان است.
             </p>
           </div>
 
-          <div className="mb-6">
-            <h3 className="mb-4 flex items-center gap-2 text-right text-sm font-semibold text-[#1E2939]" style={F}>
-              <span>انتخاب درگاه پرداخت</span>
-            </h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <fieldset className="mb-6 min-w-0">
+            <legend className="mb-4 text-right text-sm font-semibold text-[#1E2939]" style={F}>انتخاب درگاه پرداخت</legend>
+            <div className="mx-auto grid w-full max-w-[520px] grid-cols-1 justify-items-center gap-3 px-2 sm:grid-cols-2 sm:px-3">
               {[
                 { key: "saman" as const, label: "بانک سامان", logo: samanLogo },
                 { key: "parsian" as const, label: "بانک پارسیان", logo: parsianLogo },
               ].map(gateway => {
                 const active = selectedGateway === gateway.key;
                 return (
-                  <button
+                  <label
                     key={gateway.key}
-                    type="button"
-                    onClick={() => handleGatewaySelect(gateway.key)}
-                    className={`flex items-center justify-between gap-4 rounded-2xl bg-white p-4 transition-all ${active ? "border-2" : "border"}`}
-                    style={{
-                      borderColor: active ? "rgba(55, 0, 128, 0.3)" : "#e5e7eb",
-                      boxShadow: active ? "0 6px 18px rgba(55,0,128,0.10)" : "none",
-                    }}
+                    className="flex min-h-[104px] w-full min-w-0 max-w-[240px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-3 transition-colors sm:gap-3 sm:px-3 sm:py-4"
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-xl border border-gray-100 bg-white">
-                        <ImageWithFallback src={gateway.logo} alt={gateway.label} className="h-11 w-11 object-contain" />
+                    <input type="radio" name="wallet-payment-gateway" value={gateway.key} checked={active} onChange={() => handleGatewaySelect(gateway.key)} aria-label={gateway.label} className="peer sr-only" />
+                    <span className="flex min-w-0 items-center gap-2 sm:gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white sm:size-14">
+                        <ImageWithFallback src={gateway.logo} alt="" className="size-8 object-contain sm:size-11" />
                       </span>
-                      <span className="text-sm font-bold text-[#370080]" style={F}>{gateway.label}</span>
+                      <span className="min-w-0 break-words text-sm font-bold text-[#1E2939]" style={F}>{gateway.label}</span>
                     </span>
                     <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-                      style={{ borderColor: active ? "#370080" : "#d1d5db" }}
+                      aria-hidden="true"
+                      data-gateway-indicator={gateway.key}
+                      className={`flex size-5 shrink-0 items-center justify-center rounded-[5px] border-2 border-[#CA165C] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#CA165C] ${active ? "bg-[#CA165C] text-white" : "bg-white"}`}
                     >
-                      {active && <span className="h-2.5 w-2.5 rounded-full bg-[#370080]" />}
+                      {active && <Check size={14} strokeWidth={2.5} />}
                     </span>
-                  </button>
+                  </label>
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
           <button
             type="button"
             onClick={validateAmount}
-            className="w-full rounded-2xl bg-[#370080] py-4 text-base font-black text-white transition-colors hover:bg-[#2c0066]"
+            className="w-full rounded-2xl bg-[#CA165C] py-4 text-base font-semibold text-white transition-colors hover:bg-[#CA165C]/90"
             style={F}
           >
             شارژ کیف پول
@@ -1622,7 +1623,7 @@ function WalletSection() {
       )}
 
       {walletAction === "refund" && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6" dir="rtl">
+        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm sm:p-6" dir="rtl">
           <div className="mb-6">
             <label className="mb-2 flex items-center gap-2 text-right text-sm font-semibold text-[#1E2939]" style={F}>
               <span>مبلغ عودت (تومان)</span>
@@ -1631,12 +1632,17 @@ function WalletSection() {
               type="text"
               inputMode="numeric"
               value={refundAmount}
-              onChange={event => setRefundAmount(event.target.value.replace(/\D/g, ""))}
+              onChange={event => {
+                const digits = event.target.value.replace(/\D/g, "");
+                setRefundAmount(digits);
+                if (digits) setRefundAmountError(false);
+              }}
               placeholder="لطفا مبلغ عودت را وارد کنید"
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors placeholder:text-gray-400 hover:border-[#370080]/35 focus:border-[#370080]"
+              aria-invalid={refundAmountError}
+              className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors placeholder:text-gray-400 focus-visible:bg-[#FCFCFD] focus-visible:ring-0 ${refundAmountError ? "border-[#CA165C]" : "border-gray-200"}`}
               style={F}
             />
-            <p className="mt-2 text-left text-sm font-[200] text-[#CA165C]" style={F}>
+            <p className="mt-2 text-left text-sm font-normal text-[#CA165C]" style={F}>
               توجه: مبلغ وارد شده نباید از مانده‌ی صورتحساب بیشتر شود.
             </p>
           </div>
@@ -1651,10 +1657,10 @@ function WalletSection() {
                 type="button"
                 onClick={() => setShowNewCardInput(value => !value)}
                 aria-expanded={showNewCardInput}
-                className="flex items-center gap-1.5 text-sm font-bold text-[#CA165C]"
+                className="flex items-center gap-1.5 text-[15px] font-normal text-[#6A7282]"
                 style={F}
               >
-                <span className="text-xl leading-none">+</span>
+                <span aria-hidden="true">+</span>
                 <span>کارت جدید</span>
               </button>
             </div>
@@ -1666,9 +1672,10 @@ function WalletSection() {
                   : "pointer-events-none mb-0 grid-rows-[0fr] opacity-0"
               }`}
             >
-              <div className="min-h-0 overflow-hidden">
+              <div className="min-h-0 overflow-hidden px-2 sm:px-3">
                 <div
-                  className="relative overflow-hidden rounded-2xl p-5 text-white shadow-[0_12px_30px_rgba(202,22,92,0.22)]"
+                  data-wallet-new-card
+                  className="relative overflow-hidden rounded-[24px] border border-gray-300 p-5 text-white shadow-sm"
                   style={{ backgroundColor: "#CA165C" }}
                 >
                   <span className="pointer-events-none absolute -left-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
@@ -1759,7 +1766,8 @@ function WalletSection() {
                     key={card.id}
                     type="button"
                     onClick={() => setSelectedBankCardId(card.id)}
-                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-[#F3F4F6] p-4 text-right"
+                    aria-pressed={selected}
+                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-300 bg-[#F3F4F6] p-4 text-right shadow-sm"
                   >
                     <span className="flex min-w-0 items-center gap-3">
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white px-1 text-center">
@@ -1778,16 +1786,18 @@ function WalletSection() {
                     </span>
 
                     <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${selected ? "bg-[#370080]" : "border-2 border-gray-300 bg-white"}`}
+                      aria-hidden="true"
+                      data-bank-card-indicator={card.id}
+                      className={`flex size-5 shrink-0 items-center justify-center rounded-[5px] border-2 border-[#CA165C] ${selected ? "bg-[#CA165C] text-white" : "bg-white"}`}
                     >
-                      {selected && <span className="h-2 w-2 rounded-full bg-white" />}
+                      {selected && <Check size={14} strokeWidth={2.5} />}
                     </span>
                   </button>
                 );
               })}
             </div>
 
-            <p className="mt-2 text-left text-sm font-[200] text-[#CA165C]" style={F}>
+            <p className="mt-2 text-left text-sm font-normal text-[#CA165C]" style={F}>
               توجه: کارت بانکی حتماً باید به نام خود فروشگاه‌دار باشد.
             </p>
 
@@ -1795,7 +1805,7 @@ function WalletSection() {
               type="button"
               onClick={handleRefundRequest}
               disabled={isSubmittingRefund}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#370080] py-4 text-base font-black text-white transition-colors hover:bg-[#2c0066] disabled:cursor-wait disabled:bg-[#370080]"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#CA165C] py-4 text-base font-semibold text-white transition-colors hover:bg-[#CA165C]/90 disabled:cursor-wait disabled:bg-[#CA165C]"
               style={F}
             >
               {isSubmittingRefund ? (
@@ -2614,7 +2624,7 @@ function SalesDashboardSection() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-base font-black text-gray-900 sm:text-xl" style={F}>پنل فروش</h2>
+      <ProfileSectionHeading className=""><h2 className="text-base font-black text-gray-900 sm:text-xl" style={F}>پنل فروش</h2></ProfileSectionHeading>
       <div className="h-px bg-gray-100" />
 
       {/* ── Section 1: stat cards ── */}
@@ -3563,9 +3573,9 @@ function SrProductTable() {
 function SingleRollSaleSection() {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-5">
+      <ProfileSectionHeading>
         <h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>فروش تک رولی‌ها</h1>
-      </div>
+      </ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
       <p className="text-sm text-gray-500 text-right mb-6" style={F}>شما می‌تونی با تخفیف ویژه از ما خریداری کنی. فقط کافیه کد رول دلخواتو انتخاب و از تخفیف ویژه استفاده کنی.</p>
       <SrProductTable />
@@ -3601,10 +3611,8 @@ export function ProfilePage() {
     ? storedUser
     : userRecord?.name ?? userRecord?.fullName;
   const nameParts = (typeof nameValue === "string" ? nameValue.trim() : "").split(/\s+/);
-  const firstName = typeof userRecord?.firstName === "string"
-    ? userRecord.firstName : nameParts[0] || "کاربر";
-  const lastName = typeof userRecord?.lastName === "string"
-    ? userRecord.lastName : nameParts.slice(1).join(" ");
+  const firstName = "کاربر";
+  const lastName = "سایت";
 
   const [notifEnabled, setNotifEnabled] = useState(false);
 
@@ -3667,11 +3675,11 @@ export function ProfilePage() {
               <SheetDescription className="text-xs leading-6 text-[#370080]/60">دسترسی به سفارش‌ها، کیف پول و تنظیمات</SheetDescription>
             </SheetHeader>
             <nav aria-label="منوی حساب کاربری" className="space-y-5">
-              {Array.from(new Set(menuItems.map(item => item.group).filter(Boolean))).map(group => (
+              {Array.from(new Set(visibleMenuItems.map(item => item.group).filter(Boolean))).map(group => (
                 <div key={group}>
                   <p className="mb-2 px-3 text-xs font-medium text-[#370080]/50">{group}</p>
                   <div className="space-y-1">
-                    {menuItems.filter(item => item.group === group).map(({ key, label, icon: Icon }) => (
+                    {visibleMenuItems.filter(item => item.group === group).map(({ key, label, icon: Icon }) => (
                       <button key={key} type="button" data-profile-menu={key}
                         aria-current={active === key ? "page" : undefined}
                         onClick={() => handleMenu(key)}
@@ -3694,8 +3702,8 @@ export function ProfilePage() {
 
           {/* ── RIGHT: sidebar — desktop only ── */}
           <div className="hidden w-[260px] shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white py-1 shadow-sm lg:block xl:w-[280px]">
-            {menuItems.map(({ key, label, icon: Icon, color, group }, idx) => {
-              const prevGroup = idx > 0 ? menuItems[idx - 1].group : null;
+            {visibleMenuItems.map(({ key, label, icon: Icon, color, group }, idx) => {
+              const prevGroup = idx > 0 ? visibleMenuItems[idx - 1].group : null;
               const showHeader = group && group !== prevGroup;
               return (
                 <div key={key}>
@@ -3714,28 +3722,28 @@ export function ProfilePage() {
           </div>
 
           {/* ── LEFT: content ── */}
-          <div id="profile-content" data-profile-section={active} className={`w-full flex-1 min-w-0 ${active === "profile" ? "flex flex-col gap-5" : `${active === "return" ? "bg-[#FCFCFD]/50" : "bg-white"} rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8`}`}>
+          <div id="profile-content" data-profile-section={active} className={`w-full flex-1 min-w-0 ${active === "profile" ? "flex flex-col gap-5" : "bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8"}`}>
 
             {active === "profile" && (
               <>
                 {/* کارت ۱ — اطلاعات مشتری حقیقی */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8">
-                  <h1 className="mb-5 text-right text-base font-black text-gray-900 sm:text-xl" style={F}>تنظیمات حساب کاربری</h1>
+                  <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>تنظیمات حساب کاربری</h1></ProfileSectionHeading>
                   <div className="h-px bg-gray-100 mb-5" />
                   <div className="flex flex-col gap-5">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-                      <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-5">
+                      <div className="flex min-w-0 flex-col gap-2">
                         <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>نام :</label>
-                        <div className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" style={F}>{firstName}</div>
+                        <div className="break-words rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" style={F}>کاربر</div>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex min-w-0 flex-col gap-2">
                         <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>نام خانوادگی :</label>
-                        <div className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" style={F}>{lastName || "—"}</div>
+                        <div className="break-words rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" style={F}>سایت</div>
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>تلفن همراه :</label>
-                      <div className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" dir="ltr" style={F}>09123456789</div>
+                      <div className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282]" dir="ltr" style={F}>0910000000</div>
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>آدرس :</label>

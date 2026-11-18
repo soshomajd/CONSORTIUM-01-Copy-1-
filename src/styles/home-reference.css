@@ -169,7 +169,7 @@
 }
 
 .reference-home-footer { margin-top: 36px; margin-bottom: 80px; }
-.reference-home-footer > div:first-child { display: block; padding: 24px 20px; background: #1c1c1c; }
+.reference-home-footer > div:first-child { display: block; padding: 24px 20px; }
 .reference-home-footer .footer-company { gap: 16px; }
 .reference-home-footer .footer-company > img { width: 115px; height: 34px; }
 .reference-home-footer .footer-company > p { font-size: 14px; line-height: 1.7; font-weight: 600; }

@@ -329,11 +329,11 @@ export function ProductCatalogPage({
           {/* Main layout: sidebar + grid */}
           <div className="grid items-start gap-6 lg:grid-cols-[312px_minmax(0,1fr)]">
             {/* Filter sidebar — first in DOM = right side in RTL */}
-            <div className="min-w-0 lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain">
+            <div className={`min-w-0 lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] ${sidebarContent ? "" : "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain"}`}>
               <aside
                 className={`${
                   discounted ? "" : "hidden lg:block"
-                } w-full overflow-hidden rounded-2xl border border-gray-200 bg-white`}
+                } w-full overflow-hidden rounded-2xl border border-gray-200 bg-white ${sidebarContent ? "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain" : ""}`}
                 aria-label="فیلتر محصولات"
               >
                 <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
@@ -423,7 +423,7 @@ export function ProductCatalogPage({
                         }`}
                       >
                         <div className="min-h-0 overflow-hidden">
-                          <div className="max-h-64 overflow-y-auto overscroll-contain bg-white px-12">
+                          <div className={`bg-white px-12 ${sidebarContent ? "" : "max-h-64 overflow-y-auto overscroll-contain"}`}>
                             <div className="divide-y divide-gray-100">
                               {section.options.map((option) => (
                                 <label
@@ -506,7 +506,7 @@ export function ProductCatalogPage({
                           aria-label={`حذف فیلتر ${option}`}
                           className="flex min-h-11 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]"
                         >
-                          <span className="flex items-center gap-1.5 rounded-full bg-[#CA165C]/10 px-2.5 py-1 text-xs font-normal text-[#CA165C]">
+                          <span className="flex items-center gap-1.5 rounded-full border border-[#CA165C] bg-white px-2.5 py-1 text-[13px] font-normal text-[#CA165C]">
                             {option}
                             <X size={12} aria-hidden="true" />
                           </span>
@@ -520,7 +520,7 @@ export function ProductCatalogPage({
                         aria-label="حذف فیلتر فقط موجود"
                         className="flex min-h-11 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]"
                       >
-                        <span className="flex items-center gap-1.5 rounded-full bg-[#CA165C]/10 px-2.5 py-1 text-xs font-normal text-[#CA165C]">
+                        <span className="flex items-center gap-1.5 rounded-full border border-[#CA165C] bg-white px-2.5 py-1 text-[13px] font-normal text-[#CA165C]">
                           فقط موجود
                           <X size={12} aria-hidden="true" />
                         </span>
@@ -532,9 +532,9 @@ export function ProductCatalogPage({
                         setSelectedFilters({})
                         setOnlyAvailable(false)
                       }}
-                      className="min-h-11 cursor-pointer rounded-md px-1 text-xs font-light text-[#CA165C] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-[#CA165C]"
+                      className="flex min-h-11 cursor-pointer items-center rounded-full text-[13px] font-light text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#CA165C]"
                     >
-                      حذف همه فیلترها
+                      <span className="rounded-full bg-white px-2.5 py-1 underline underline-offset-4">حذف همه فیلترها</span>
                     </button>
                   </div>
                 )}
@@ -548,12 +548,13 @@ export function ProductCatalogPage({
                     item={item}
                     timer={discounted ? [hh, mm, ss2] : undefined}
                     showDiscount={discounted}
-                    unavailable={!discounted && item.code === "WP-B204"}
-                    title={!discounted && item.code === "WP-A101" ? "تکسچر 6130" : undefined}
+                    unavailable={!discounted && item.code === "WP-A101"}
+                    title={!discounted ? item.code === "WP-B204" ? "تکسچر ۶۱۳۰" : item.code === "WP-A101" ? "تکسچر 6130" : undefined : undefined}
                     productHref={!discounted && item.code === "WP-A101" ? "/product/6130" : undefined}
                     showReviews={discounted || item.code !== "WP-A101"}
                     amazingTypography
-                    hasIncentive={discounted}
+                    hasIncentive={discounted || item.code === "WP-C317"}
+                    fastDelivery={!discounted && item.code === "WP-D412"}
                     fluid
                   />
                 ))}

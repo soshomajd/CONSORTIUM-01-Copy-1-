@@ -47,7 +47,7 @@ export function Footer({ home = false }: { home?: boolean }) {
       }`}
       style={home ? { fontFamily: "HomeIRANSans, Vazirmatn, sans-serif" } : F}
     >
-      <div className="grid gap-8 rounded-[26px] bg-[#1A1A1A] px-6 py-8 text-white sm:grid-cols-2 sm:px-[34px] xl:min-h-[310px] xl:grid-cols-[1.1fr_.65fr_.65fr_1.15fr]">
+      <div className="grid gap-8 rounded-[26px] bg-[#2D1E3E] px-6 py-8 text-white sm:grid-cols-2 sm:px-[34px] xl:min-h-[310px] xl:grid-cols-[1.1fr_.65fr_.65fr_1.15fr]">
         <div className="footer-company flex min-w-0 flex-col items-start gap-5">
           <ImageWithFallback
             src={home ? homeAssets[0] : logoImg}
