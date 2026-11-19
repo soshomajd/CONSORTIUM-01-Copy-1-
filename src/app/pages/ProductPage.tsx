@@ -101,7 +101,7 @@ export function ProductPage() {
     : 0;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white" style={F}>
+    <div dir="rtl" className={`min-h-screen bg-white ${p && usesDetailedProductLayout(p.code) ? "product-mobile-purchase" : ""}`} style={F}>
 
 
       {!p ? (

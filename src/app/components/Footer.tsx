@@ -42,7 +42,7 @@ export function Footer({ home = false }: { home?: boolean }) {
   return (
     <footer
       dir="rtl"
-      className={`mx-auto mt-6 mb-24 w-[calc(100%-2rem)] max-w-[1380px] sm:mb-6 sm:w-[calc(100%-3rem)] ${
+      className={`storefront-footer mx-auto mt-6 mb-24 w-[calc(100%-2rem)] max-w-[1380px] sm:mb-6 sm:w-[calc(100%-3rem)] ${
         home ? "reference-home-footer" : ""
       }`}
       style={home ? { fontFamily: "HomeIRANSans, Vazirmatn, sans-serif" } : F}
