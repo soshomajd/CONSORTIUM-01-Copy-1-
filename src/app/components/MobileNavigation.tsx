@@ -1,8 +1,6 @@
 import { useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import {
-  Home,
-  LayoutGrid,
   ShoppingCart,
   User,
   Zap,
@@ -14,6 +12,14 @@ import {
   Wallet,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "./ui/sheet"
+import mobileProfileIcon from "@/assets/icons/mobile-nav-profile.svg"
+import mobileCartIcon from "@/assets/icons/mobile-nav-cart.svg"
+import mobileCategoriesIcon from "@/assets/icons/mobile-nav-categories.svg"
+import mobileHomeIcon from "@/assets/icons/mobile-nav-home.svg"
+
+function MobileNavIcon({ src }: { src: string }) {
+  return <span aria-hidden="true" className="size-7 shrink-0 bg-current" style={{ maskImage: `url("${src}")`, WebkitMaskImage: `url("${src}")`, maskSize: "36px 36px", WebkitMaskSize: "36px 36px", maskPosition: "center", WebkitMaskPosition: "center", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat" }} />
+}
 
 const accountLinks = [
   { key: "profile", title: "تنظیمات حساب کاربری", icon: User },
@@ -37,6 +43,7 @@ export function MobileNavigation({
   user: string | null
 }) {
   const location = useLocation()
+  const quickOrderActive = location.pathname === "/profile" && new URLSearchParams(location.search).get("section") === "quick"
   const navigate = useNavigate()
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)")
@@ -47,10 +54,10 @@ export function MobileNavigation({
     return () => media.removeEventListener("change", close)
   }, [onOpenChange])
   const items = [
-    { label: "خانه", to: "/", icon: Home },
-    { label: "دسته‌بندی", to: "/products", icon: LayoutGrid },
-    { label: "سبد خرید", to: "/cart", icon: ShoppingCart },
-    { label: "سفارش سریع", to: "/profile/pricing-details", icon: Zap },
+    { label: "خانه", to: "/", asset: mobileHomeIcon },
+    { label: "دسته‌بندی", to: "/products", asset: mobileCategoriesIcon },
+    { label: "سبد خرید", to: "/cart", asset: mobileCartIcon },
+    { label: "سفارش سریع", to: "/profile?section=quick", icon: Zap },
   ]
   return (
     <>
@@ -59,21 +66,13 @@ export function MobileNavigation({
         dir="rtl"
         aria-label="ناوبری موبایل"
       >
-        {items.map(({ label, to, icon: Icon }) => (
+        {items.map(({ label, to, icon: Icon, asset }) => (
           <Link
             key={to}
             to={to}
-            aria-current={location.pathname === to ? "page" : undefined}
+            aria-current={location.pathname === to || (to === "/profile?section=quick" && quickOrderActive) ? "page" : undefined}
           >
-            <Icon
-              size={24}
-              strokeWidth={1.8}
-              fill={
-                to === "/" && location.pathname === "/"
-                  ? "currentColor"
-                  : "none"
-              }
-            />
+            {asset ? <MobileNavIcon src={asset} /> : Icon && <Icon size={24} strokeWidth={1.8} />}
             <span>{label}</span>
           </Link>
         ))}
@@ -82,9 +81,9 @@ export function MobileNavigation({
           onClick={() => onOpenChange(true)}
           aria-haspopup="dialog"
           aria-expanded={open}
-          className={location.pathname === "/profile" ? "is-active" : undefined}
+          className={open || (location.pathname === "/profile" && !quickOrderActive) ? "is-active" : undefined}
         >
-          <User size={24} strokeWidth={1.8} />
+          <MobileNavIcon src={mobileProfileIcon} />
           <span>پروفایل</span>
         </button>
       </nav>

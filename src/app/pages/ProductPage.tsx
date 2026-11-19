@@ -14,6 +14,7 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ProductReviews } from "@/app/components/ProductReviews";
 import { ProductOfferBenefits } from "@/app/components/ProductOfferBenefits";
 import { ProductCartControl } from "@/app/components/ProductCartControl";
+import { SimilarProducts } from "@/app/components/SimilarProducts";
 import productFavoriteIcon from "@/assets/icons/product-favorite-black.svg";
 import productShareIcon from "@/assets/icons/product-share-black.svg";
 import productCompareIcon from "@/assets/icons/product-compare-black.svg";
@@ -461,6 +462,8 @@ function ProductMeta({ name, code, album, color, onReviewAdded }: { name: string
           </div>
         ))}
       </div>
+
+      {usesDetailedProductLayout(code) && <SimilarProducts />}
 
       {usesDetailedProductLayout(code) ? (
         <ProductReviews key={code} startEmpty={code === "6130"} onReviewAdded={onReviewAdded} productName={collections[name]?.name ?? `کاغذ دیواری ${code}`} code={code} album={album} color={color} />

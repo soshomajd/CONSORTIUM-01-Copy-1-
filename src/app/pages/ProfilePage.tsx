@@ -3630,7 +3630,7 @@ export function ProfilePage() {
   const activeLabel = menuItems.find(m => m.key === active)?.label ?? "";
 
   return (
-    <div id="profile-page" dir="rtl" className="min-h-screen bg-[#ffffff]" style={F}>
+    <div id="profile-page" dir="rtl" className="min-w-0 bg-[#ffffff]" style={F}>
     <style>{`
       @media (max-width: 639px) {
         #profile-content input, #profile-content textarea, #profile-content select { font-size: 16px; min-width: 0; }
@@ -3662,7 +3662,7 @@ export function ProfilePage() {
     `}</style>
 
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:pt-10 sm:pb-6">
 
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent id="profile-mobile-menu" side="right" dir="rtl"
