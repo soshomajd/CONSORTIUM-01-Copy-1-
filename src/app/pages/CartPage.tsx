@@ -34,8 +34,8 @@ export function CartPage() {
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <p className="text-gray-400 text-lg mb-4" style={F}>سبد خرید شما خالی است</p>
-            <button onClick={() => navigate("/")} className="px-6 py-3 bg-[#3d1a6e] text-white rounded-xl text-sm font-bold hover:bg-[#2d1255] transition-colors" style={F}>
+            <p className="mb-4 text-[15px] font-normal text-[#6A7282] sm:text-lg sm:text-gray-400" style={F}>سبد خرید شما خالی است</p>
+            <button onClick={() => navigate("/")} className="px-6 py-3 bg-[#CA165C] sm:bg-[#3d1a6e] text-white rounded-xl text-sm font-bold hover:bg-[#CA165C]/90 sm:hover:bg-[#2d1255] transition-colors" style={F}>
               ادامه خرید
             </button>
           </div>

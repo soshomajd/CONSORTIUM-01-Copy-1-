@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { addToCart } from "@/app/lib/cart";
+import { getPaginationItems } from "@/app/lib/pagination";
 import { clearUser, getUser, openMobileProfileMenu } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
@@ -84,7 +85,7 @@ function ProfileSectionHeading({ children, className = "mb-5" }: { children: Rea
   );
 }
 
-function ProfilePagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {
+function ProfilePagination({ page, totalPages, onPageChange, compact = false }: { page: number; totalPages: number; onPageChange: (page: number) => void; compact?: boolean }) {
   if (totalPages <= 1) return null;
   const arrowClass = "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-0 text-[#CA165C] transition-opacity disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]";
 
@@ -93,7 +94,9 @@ function ProfilePagination({ page, totalPages, onPageChange }: { page: number; t
       <button type="button" aria-label="صفحه قبل" disabled={page === 1} onClick={() => onPageChange(page - 1)} className={arrowClass}>
         <ChevronRight size={16} aria-hidden="true" />
       </button>
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map(number => (
+      {(compact ? getPaginationItems(page, totalPages) : Array.from({ length: totalPages }, (_, index) => index + 1)).map(number => typeof number === "string" ? (
+        <span key={number} aria-hidden="true" className="flex h-9 w-5 items-center justify-center text-sm text-[#CA165C]">…</span>
+      ) : (
         <button key={number} type="button" aria-label={`صفحه ${fmt(number)}`} aria-current={page === number ? "page" : undefined} onClick={() => onPageChange(number)}
           className={`flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#CA165C] p-0 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] ${page === number ? "bg-[#CA165C] font-black text-white" : "bg-white font-normal text-[#CA165C]"}`}>
           {fmt(number)}
@@ -412,8 +415,10 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
   const [activeTab, setActiveTab] = useState("current");
   const [page, setPage] = useState(1);
   const filtered = mockOrders.filter(o => o.tab === activeTab);
-  const totalPages = Math.ceil(filtered.length / ORDERS_PER_PAGE);
-  const paginatedOrders = filtered.slice((page - 1) * ORDERS_PER_PAGE, page * ORDERS_PER_PAGE);
+  const demoDataPages = Math.ceil(filtered.length / ORDERS_PER_PAGE);
+  const totalPages = activeTab !== "returned" && demoDataPages > 0 ? 21 : 0;
+  const dataPage = demoDataPages > 0 ? ((page - 1) % demoDataPages) + 1 : 1;
+  const paginatedOrders = filtered.slice((dataPage - 1) * ORDERS_PER_PAGE, dataPage * ORDERS_PER_PAGE);
   return (
     <div className="profile-orders">
       <style>{`
@@ -451,7 +456,7 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
           ) : paginatedOrders.map(o => <OrderCard key={o.id} order={o} showPay={activeTab === "review"} />)}
         </div>
       )}
-      <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} compact />
     </div>
   );
 }
@@ -532,11 +537,18 @@ function CouponCard({ coupon }: { coupon: typeof PROFILE_COUPONS[0] }) {
 
 function NotificationsSection() {
   const [activeTab, setActiveTab] = useState("all");
+  const [page, setPage] = useState(1);
   const filtered = activeTab === "all" ? mockNotifs : mockNotifs.filter(n => n.cat === activeTab);
+  const perPage = 5;
+  const itemCount = activeTab === "discount" ? PROFILE_COUPONS.length : filtered.length;
+  const demoDataPages = Math.ceil(itemCount / perPage);
+  const totalPages = demoDataPages > 0 ? 21 : 0;
+  const dataPage = demoDataPages > 0 ? ((page - 1) % demoDataPages) + 1 : 1;
+  const start = (dataPage - 1) * perPage;
 
   return (
     <div>
-      <ProfileSectionHeading><h1 className="text-right text-[15px] font-black text-gray-900" style={F}>اعلانات</h1></ProfileSectionHeading>
+      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>اعلانات</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
       {/* Filter tabs — right aligned (justify-start = visual right in RTL) */}
@@ -544,7 +556,7 @@ function NotificationsSection() {
         {notifTabs.map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key)}
+            onClick={() => { setActiveTab(key); setPage(1); }}
             className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[15px] font-semibold transition-all sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
             style={F}
           >
@@ -556,14 +568,14 @@ function NotificationsSection() {
       {/* Coupon list for discount tab */}
       {activeTab === "discount" ? (
         <div className="flex flex-col divide-y divide-gray-100">
-          {PROFILE_COUPONS.map(c => <CouponCard key={c.code} coupon={c} />)}
+          {PROFILE_COUPONS.slice(start, start + perPage).map(c => <CouponCard key={c.code} coupon={c} />)}
         </div>
       ) : (
         /* Notif list */
         <div className="flex flex-col divide-y divide-gray-100">
           {filtered.length === 0 ? (
             <div className="text-center py-16"><Bell size={40} className="text-gray-200 mx-auto mb-3" /><p className="text-gray-400 text-[15px]" style={F}>اعلانی وجود ندارد</p></div>
-          ) : filtered.map(n => (
+          ) : filtered.slice(start, start + perPage).map(n => (
               <div key={n.id} className={`flex items-center justify-start py-4 ${!n.read ? "opacity-100" : "opacity-60"}`}>
                 <div className="flex items-start gap-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "rgba(55, 0, 128, 0.06)" }}>
@@ -579,6 +591,7 @@ function NotificationsSection() {
             ))}
         </div>
       )}
+      <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} compact />
     </div>
   );
 }
@@ -638,8 +651,11 @@ function QuickOrderSection() {
     return true;
   });
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const demoDataPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const totalPages = demoDataPages > 0 ? 21 : 0;
+  // Reuse demo rows so every page in the pagination preview has content.
+  const dataPage = demoDataPages > 0 ? ((page - 1) % demoDataPages) + 1 : 1;
+  const paginated = filtered.slice((dataPage - 1) * PAGE_SIZE, dataPage * PAGE_SIZE);
 
   const setQty = (id: string, val: number) =>
     setQuantities(q => ({ ...q, [id]: Math.max(0, val) }));
@@ -751,7 +767,7 @@ function QuickOrderSection() {
           </div>
 
           {/* Pagination */}
-          <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} compact />
         </div>
 
       </div>
@@ -890,8 +906,8 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
       <div className="h-px bg-gray-100 mb-5" />
 
       {/* Shipping method and product search */}
-      <div className="mb-5 flex items-end gap-4">
-        <div className="flex w-2/5 flex-col gap-2">
+      <div className="mb-5 flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
+        <div className="flex w-full flex-col gap-2 sm:w-2/5">
           <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>انتخاب شیوه ارسال</label>
           <div className="relative w-full" ref={shippingDropRef}>
           <button
@@ -944,7 +960,7 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
               onChange={e => { setSearch(e.target.value); setDropdownOpen(true); }}
               placeholder="جستجوی کد یا نام محصول..."
               className="min-w-0 flex-1 bg-transparent text-right text-sm font-light text-[#6A7282] outline-none placeholder:text-[#6A7282]"
-              style={F}
+              style={{ ...F, fontSize: 14, fontWeight: 300 }}
             />
             <Search size={14} className="shrink-0 text-[#6A7282]" />
           </div>
@@ -975,37 +991,40 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
       {items.length > 0 && (
         <div className="flex flex-col gap-3 mb-6">
           {items.map(item => (
-            <div key={item.product.id} className="flex flex-wrap items-center gap-3 border border-gray-200 rounded-2xl p-3 sm:flex-nowrap sm:p-4 bg-white">
+            <div key={item.product.id} data-return-request-item className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border border-gray-200 rounded-2xl p-3 sm:flex sm:items-center sm:p-4 bg-white">
 
               {/* Image + upload — first in DOM = visual RIGHT in RTL */}
-              <div className="shrink-0 flex flex-col items-center gap-1 min-w-[72px]">
+              <div className="grid min-w-0 grid-cols-[56px_minmax(0,1fr)] items-start gap-x-2 gap-y-0.5 sm:flex sm:flex-col sm:shrink-0 sm:items-center sm:gap-1.5 sm:min-w-[72px]">
                 <div className="w-14 h-14 rounded-xl bg-pink-100 overflow-hidden border border-pink-200">
                   <ImageWithFallback src={roll2} alt={item.product.name} className="w-full h-full object-cover" />
                 </div>
-                <button className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: "#CA165C", ...F }}>
+                <span className="min-w-0 self-center break-words text-right text-sm font-semibold leading-6 text-gray-800 sm:hidden" style={F}>{item.product.name}</span>
+                <button className="col-span-2 mt-4 sm:mt-0 text-[11px] sm:text-[10px] font-semibold flex items-center gap-0.5" style={{ color: "#CA165C", ...F }}>
                   <span>↑</span><span>بارگذاری تصویر کالا</span>
                 </button>
-                <span className="text-center text-[13px] leading-5 text-gray-400" style={F}>PNG و JPG — حداکثر ۵ مگابایت</span>
+                <span className="col-span-2 max-w-full text-right text-[13px] leading-5 text-gray-400 sm:text-center" style={F}>PNG و JPG — حداکثر ۵ مگابایت</span>
               </div>
 
               {/* Product name — middle, grows */}
-              <span className="min-w-0 flex-1 basis-[calc(100%-100px)] break-words text-sm font-semibold text-gray-800 text-right sm:basis-0" style={F}>{item.product.name}</span>
+              <span className="hidden min-w-0 flex-1 break-words text-sm font-semibold text-gray-800 text-right sm:block" style={F}>{item.product.name}</span>
 
               {/* Qty controls */}
-              <div className="flex shrink-0 items-center gap-1">
-                <button type="button" aria-label={`کاهش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty - 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border-[1.5px] border-[#CA165C] text-[#CA165C] hover:bg-[#CA165C]/5"><Minus size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></button>
-                <span className="w-6 text-center text-sm font-bold text-[#CA165C]" style={F}>{item.qty.toLocaleString("fa-IR")}</span>
-                <button type="button" aria-label={`افزایش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty + 1)} className="flex h-10 w-10 items-center justify-center sm:h-7 sm:w-7 rounded-full border-[1.5px] border-[#CA165C] text-[#CA165C] hover:bg-[#CA165C]/5"><Plus size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></button>
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
+              <div className="flex items-center justify-between">
+                <button type="button" aria-label={`کاهش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty - 1)} className="flex h-11 w-9 items-center justify-center rounded-full text-[#CA165C] sm:size-7"><span className="flex size-7 items-center justify-center rounded-full border-[1.5px] border-[#CA165C] hover:bg-[#CA165C]/5"><Minus size={13} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></span></button>
+                <span className="w-5 text-center text-sm font-bold text-[#CA165C] sm:w-6" style={F}>{item.qty.toLocaleString("fa-IR")}</span>
+                <button type="button" aria-label={`افزایش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty + 1)} className="flex h-11 w-9 items-center justify-center rounded-full text-[#CA165C] sm:size-7"><span className="flex size-7 items-center justify-center rounded-full border-[1.5px] border-[#CA165C] hover:bg-[#CA165C]/5"><Plus size={13} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></span></button>
               </div>
 
               {/* حذف — last in DOM = visual LEFT in RTL */}
               <button
                 onClick={() => removeItem(item.product.id)}
-                className="mr-6 shrink-0 rounded-lg px-4 py-2 text-sm font-bold text-white transition-colors"
+                className="w-full shrink-0 rounded-lg px-1.5 py-1 text-sm font-bold text-white transition-colors sm:mr-6 sm:w-auto sm:px-4 sm:py-2"
                 style={{ backgroundColor: "#CA165C", ...F }}
               >
                 حذف
               </button>
+              </div>
             </div>
           ))}
         </div>
@@ -1250,9 +1269,9 @@ function StatementSection() {
       </div>
 
       {/* Filter controls: تعداد نمایش (right) | از تاریخ | تا تاریخ (left) */}
-      <div className="flex items-end gap-4 flex-wrap mb-5">
+      <div className="mb-5 grid grid-cols-2 items-end gap-4 sm:grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)]">
         {/* تعداد نمایش — first = visual right */}
-        <div className="flex flex-col gap-1.5 min-w-[100px]">
+        <div className="col-span-2 flex w-[100px] flex-col gap-1.5 sm:col-span-1">
           <label className="text-right text-sm font-semibold text-[#6A7282]" style={F}>تعداد نمایش</label>
           <div className="relative">
             <button
@@ -1300,24 +1319,24 @@ function StatementSection() {
         </div>
 
         {/* از تاریخ */}
-        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <label className="text-right text-sm font-semibold" style={{ color: "#CA165C", ...F }}>از تاریخ</label>
           <input
             value={fromDate}
             onChange={e => setFromDate(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors focus:border-[#3d1a6e]"
+            className="w-full min-w-0 rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors focus:border-[#3d1a6e]"
             style={F}
             placeholder="۱۴۰۵/۰۴/۲۱"
           />
         </div>
 
         {/* تا تاریخ */}
-        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <label className="text-right text-sm font-semibold text-[#CA165C]" style={F}>تا تاریخ</label>
           <input
             value={toDate}
             onChange={e => setToDate(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors focus:border-[#3d1a6e]"
+            className="w-full min-w-0 rounded-xl border border-gray-200 bg-[#FCFCFD]/50 px-3 py-2.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors focus:border-[#3d1a6e]"
             style={F}
             placeholder="۱۴۰۵/۰۴/۲۱"
           />
@@ -1528,7 +1547,7 @@ function WalletSection() {
         <ProfileSectionHeading className=""><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>کیف پول</h1></ProfileSectionHeading>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-4 lg:mb-8">
+      <div className="mb-4 grid grid-cols-2 gap-1.5 sm:mb-6 sm:gap-4 lg:mb-8">
         {[
           { action: "charge" as const, title: "افزایش موجودی", subtitle: "شارژ کیف پول", Icon: Wallet },
           { action: "refund" as const, title: "عودت وجه", subtitle: "بازگشت مبلغ به کیف پول", Icon: RefreshCw },
@@ -1547,8 +1566,8 @@ function WalletSection() {
                 <Icon size={20} strokeWidth={1.8} className="sm:size-6" aria-hidden="true" />
               </span>
               <span className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-right">
-                <span className="min-h-12 break-words text-[15px] font-semibold text-[#1E2939] sm:min-h-0">{title}</span>
-                <span className="mt-0.5 min-h-10 break-words text-[15px] font-normal text-[#6A7282] sm:min-h-0">{subtitle}</span>
+                <span className="min-h-10 break-words text-[15px] font-semibold text-[#1E2939] sm:min-h-0">{title}</span>
+                <span className="mt-0.5 min-h-10 break-words text-[14px] font-normal text-[#6A7282] sm:min-h-0 sm:text-[15px]">{subtitle}</span>
               </span>
             </span>
             <ChevronLeft size={20} className="hidden shrink-0 text-[#1E2939] transition-transform group-hover:-translate-x-1 sm:block" aria-hidden="true" />
@@ -1570,8 +1589,8 @@ function WalletSection() {
               placeholder="لطفا مبلغ شارژ را وارد کنید"
               title="لطفا مبلغ شارژ را وارد کنید"
               aria-invalid={amountError}
-              className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus-visible:bg-[#FCFCFD] focus-visible:ring-0 ${amountError ? "border-[#CA165C]" : "border-gray-200"}`}
-              style={F}
+              className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors placeholder:text-gray-400 focus-visible:bg-[#FCFCFD] focus-visible:ring-0 ${amountError ? "border-[#CA165C]" : "border-gray-200"}`}
+              style={{ ...F, fontSize: 14, fontWeight: 300 }}
             />
             <p className="mt-2 text-left text-sm font-normal text-[#CA165C]" style={F}>
               توجه: حداکثر مبلغ قابل شارژ ۴۰۰٬۰۰۰٬۰۰۰ تومان است.
@@ -1640,7 +1659,7 @@ function WalletSection() {
               placeholder="لطفا مبلغ عودت را وارد کنید"
               aria-invalid={refundAmountError}
               className={`w-full rounded-xl border bg-white px-4 py-3.5 text-right text-sm font-light text-[#6A7282] outline-none transition-colors placeholder:text-gray-400 focus-visible:bg-[#FCFCFD] focus-visible:ring-0 ${refundAmountError ? "border-[#CA165C]" : "border-gray-200"}`}
-              style={F}
+              style={{ ...F, fontSize: 14, fontWeight: 300 }}
             />
             <p className="mt-2 text-left text-sm font-normal text-[#CA165C]" style={F}>
               توجه: مبلغ وارد شده نباید از مانده‌ی صورتحساب بیشتر شود.

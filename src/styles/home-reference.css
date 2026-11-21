@@ -227,16 +227,36 @@
 .storefront-account-drawer { width: 83.333vw; max-width: 440px; gap: 0; border: 0; border-radius: 20px 0 0 20px; padding: 0; background: white; color: #111; font-family: "HomeIRANSans", "Vazirmatn", sans-serif; overflow-y: auto; overscroll-behavior: contain; }
 .storefront-account-drawer > button { left: 12px; right: auto; top: 12px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent !important; color: #666; }
 .storefront-account-drawer > button svg { width: 20px; height: 20px; }
-.storefront-account-heading { flex-shrink: 0; padding: 18px 24px 20px; border-bottom: 1px solid #f1f1f1; text-align: right; }
-.storefront-account-heading h2 { margin: 0; font-family: inherit; font-size: 20px; line-height: 1.7; font-weight: 600; color: #111; }
+.storefront-account-heading { flex-shrink: 0; padding: 16px 20px; border-bottom: 1px solid #f1f1f1; text-align: right; }
+.storefront-account-heading h2 { margin: 0; font-family: inherit; font-size: 16px; line-height: 24px; font-weight: 600; color: #111; }
 .storefront-account-heading p { margin: 0; font-family: inherit; font-size: 12px; color: #111; }
-.storefront-account-links { padding: 8px 24px 30px; }
-.storefront-account-links button { display: flex; align-items: center; gap: 15px; min-height: 58px; width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid #f5f5f5; background: white; color: #111; font-family: inherit; font-size: 16px; font-weight: 400; text-align: right; cursor: pointer; }
+.storefront-account-links { padding: 0 20px 24px; }
+.storefront-account-links button { display: flex; align-items: center; gap: 15px; min-height: 48px; width: 100%; padding: 10px 4px; border: 0; border-bottom: 1px solid #f5f5f5; background: white; color: #111; font-family: inherit; font-size: 14px; line-height: 24px; font-weight: 400; text-align: right; cursor: pointer; }
 .storefront-account-links button:last-child { border-bottom: 0; }
 .storefront-account-links svg { color: #b4b4b4; flex-shrink: 0; }
 .storefront-account-links button:focus-visible { outline: 2px solid #370080; outline-offset: 3px; border-radius: 8px; }
+.storefront-site-drawer { border-radius: 14px 0 0 0; }
+.storefront-site-drawer > button { top: 12px; left: 14px; color: #111; }
+.storefront-site-drawer > button svg { width: 18px; height: 18px; }
+.storefront-site-drawer .storefront-account-heading { padding: 16px 20px; }
+.storefront-site-drawer .storefront-account-heading h2 { font-size: 16px; font-weight: 600; line-height: 24px; }
+.storefront-site-drawer .storefront-account-links { padding: 0 20px 24px; }
+.storefront-site-drawer .storefront-account-links button { justify-content: space-between; min-height: 48px; padding: 10px 4px; font-size: 14px; line-height: 24px; }
+.storefront-site-drawer .storefront-account-links svg { color: #111; }
+.storefront-account-drawer[data-state="open"] { animation: storefront-drawer-open 600ms cubic-bezier(0.22, 1, 0.36, 1) both; transition: none; }
+.storefront-account-drawer[data-state="closed"] { animation: storefront-drawer-close 480ms cubic-bezier(0.4, 0, 0.2, 1) both; transition: none; }
+[data-slot="sheet-overlay"]:has(+ .storefront-account-drawer)[data-state="open"] { animation: storefront-drawer-scrim-in 600ms ease-out both; }
+[data-slot="sheet-overlay"]:has(+ .storefront-account-drawer)[data-state="closed"] { animation: storefront-drawer-scrim-out 480ms ease-in-out both; }
+@keyframes storefront-drawer-open { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes storefront-drawer-close { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes storefront-drawer-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes storefront-drawer-scrim-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sheet-overlay"]:has(+ .storefront-account-drawer) { animation: none !important; }
+}
 @media (max-width: 1023px) {
-  body { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  body { height: auto; min-height: 100dvh; padding-bottom: 0; }
+  #root { height: auto; min-height: calc(100dvh - 66px - env(safe-area-inset-bottom)); }
   .storefront-header .home-header-row { grid-template-columns: 1fr auto; min-height: 46px; }
   .storefront-header .home-logo { width: 108px; }
   .storefront-header .home-login { display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 7px; justify-self: end; color: #b7b7ba !important; min-height: 44px; }
@@ -244,7 +264,7 @@
   .storefront-header .home-header-actions { display: none; }
   .storefront-header .home-mobile-search { margin-top: 4px; margin-bottom: 12px; }
   .storefront-header .home-search { max-width: none; }
-  .storefront-mobile-bottom { position: fixed; inset-inline: 0; bottom: 0; z-index: 44; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: calc(66px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #efefef; background: white; color: #D9D9D9; font-family: "HomeIRANSans", "Vazirmatn", sans-serif; }
+  .storefront-mobile-bottom { position: sticky; bottom: 0; z-index: 44; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: calc(66px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #efefef; background: white; color: #D9D9D9; font-family: "HomeIRANSans", "Vazirmatn", sans-serif; }
   .storefront-mobile-bottom > :is(a, button) { display: flex; min-width: 0; min-height: 56px; padding: 6px 2px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: transparent; border: 0; color: inherit; text-decoration: none; font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; }
   .storefront-mobile-bottom > [aria-current="page"], .storefront-mobile-bottom > .is-active { color: #370080; font-weight: 600; }
   .storefront-mobile-bottom > :is(a, button) > :is(svg, span[aria-hidden="true"]) { color: #D9D9D9; }
@@ -255,7 +275,7 @@
 @media (prefers-reduced-motion: reduce) { .storefront-account-drawer { animation: none !important; transition: none !important; } }
 
 @media (max-width: 639px) {
-  body:has(.product-mobile-purchase) { padding-bottom: calc(230px + env(safe-area-inset-bottom)); }
+  #root:has(.product-mobile-purchase) { padding-bottom: 164px; }
   .product-mobile-purchase [data-product-purchase-card] {
     position: fixed; inset-inline: 0; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 43;
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); grid-template-rows: 18px 32px 56px;

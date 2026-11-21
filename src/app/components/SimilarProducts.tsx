@@ -19,7 +19,7 @@ export function SimilarProducts() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section aria-labelledby="similar-products-heading" className="min-w-0" dir="rtl" data-similar-products>
+    <section aria-labelledby="similar-products-heading" className="catalog-card-layout min-w-0 pb-6" dir="rtl" data-similar-products>
       <Carousel
         dir="rtl"
         aria-label="کالاهای مشابه"
@@ -38,9 +38,9 @@ export function SimilarProducts() {
             <CarouselNext aria-label="کالاهای بعدی" className={navigationStyle} />
           </div>
         </div>
-        <CarouselContent className="ml-0 -mr-4 items-start pt-1 pb-4">
+        <CarouselContent className="catalog-related-track mx-0 items-start pt-1 pb-4">
           {products.map((item, index) => (
-            <CarouselItem key={item.code} className="basis-[78%] pl-0 pr-4 min-[400px]:basis-[64%] sm:basis-1/3 lg:basis-1/4 xl:basis-1/5" aria-label={`کالای ${(index + 1).toLocaleString("fa-IR")} از ${products.length.toLocaleString("fa-IR")}`}>
+            <CarouselItem key={item.code} className="catalog-related-slide px-0" aria-label={`کالای ${(index + 1).toLocaleString("fa-IR")} از ${products.length.toLocaleString("fa-IR")}`}>
               <FestivalProductCard
                 item={item}
                 showDiscount={false}

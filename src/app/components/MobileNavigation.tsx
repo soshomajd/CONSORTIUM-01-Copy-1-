@@ -1,4 +1,5 @@
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { Link, useLocation, useNavigate } from "react-router"
 import {
   ShoppingCart,
@@ -10,6 +11,7 @@ import {
   ClipboardList,
   CreditCard,
   Wallet,
+  ChevronLeft,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "./ui/sheet"
 import mobileProfileIcon from "@/assets/icons/mobile-nav-profile.svg"
@@ -33,6 +35,14 @@ const accountLinks = [
   { key: "wallet", title: "شارژ کیف پول", icon: Wallet },
 ]
 
+const siteLinks = [
+  { title: "برند", to: "/#home-brands" },
+  { title: "خرید محصولات", to: "/products" },
+  { title: "درباره ما" },
+  { title: "تماس با ما" },
+  { title: "تخفیفات", to: "/discounts" },
+]
+
 export function MobileNavigation({
   open,
   onOpenChange,
@@ -43,16 +53,27 @@ export function MobileNavigation({
   user: string | null
 }) {
   const location = useLocation()
+  const [siteMenuOpen, setSiteMenuOpen] = useState(false)
+  const categoriesButton = useRef<HTMLButtonElement>(null)
   const quickOrderActive = location.pathname === "/profile" && new URLSearchParams(location.search).get("section") === "quick"
   const navigate = useNavigate()
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)")
     const close = () => {
-      if (media.matches) onOpenChange(false)
+      if (media.matches) {
+        onOpenChange(false)
+        setSiteMenuOpen(false)
+      }
     }
     media.addEventListener("change", close)
     return () => media.removeEventListener("change", close)
   }, [onOpenChange])
+  useEffect(() => {
+    if (open) setSiteMenuOpen(false)
+  }, [open])
+  useEffect(() => {
+    setSiteMenuOpen(false)
+  }, [location.pathname, location.search, location.hash])
   const items = [
     { label: "خانه", to: "/", asset: mobileHomeIcon },
     { label: "دسته‌بندی", to: "/products", asset: mobileCategoriesIcon },
@@ -61,12 +82,29 @@ export function MobileNavigation({
   ]
   return (
     <>
-      <nav
+      {createPortal(<nav
         className="storefront-mobile-bottom"
         dir="rtl"
         aria-label="ناوبری موبایل"
       >
         {items.map(({ label, to, icon: Icon, asset }) => (
+          to === "/products" ? (
+            <button
+              key={to}
+              ref={categoriesButton}
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={siteMenuOpen}
+              className={siteMenuOpen || location.pathname === to ? "is-active" : undefined}
+              onClick={() => {
+                onOpenChange(false)
+                setSiteMenuOpen(true)
+              }}
+            >
+              <MobileNavIcon src={mobileCategoriesIcon} />
+              <span>{label}</span>
+            </button>
+          ) :
           <Link
             key={to}
             to={to}
@@ -86,7 +124,38 @@ export function MobileNavigation({
           <MobileNavIcon src={mobileProfileIcon} />
           <span>پروفایل</span>
         </button>
-      </nav>
+      </nav>, document.body)}
+      <Sheet open={siteMenuOpen} onOpenChange={setSiteMenuOpen}>
+        <SheetContent
+          side="right"
+          dir="rtl"
+          className="storefront-account-drawer storefront-site-drawer"
+          onCloseAutoFocus={event => {
+            event.preventDefault()
+            if (window.matchMedia("(max-width: 1023px)").matches) categoriesButton.current?.focus({ preventScroll: true })
+          }}
+        >
+          <div className="storefront-account-heading">
+            <SheetTitle>دسته‌بندی‌ها</SheetTitle>
+            <SheetDescription className="sr-only">دسترسی به بخش‌های اصلی کنسرسیوم</SheetDescription>
+          </div>
+          <nav aria-label="منوی اصلی سایت" className="storefront-account-links">
+            {siteLinks.map(({ title, to }) => (
+              <button
+                type="button"
+                key={title}
+                onClick={() => {
+                  setSiteMenuOpen(false)
+                  if (to) navigate(to)
+                }}
+              >
+                <span>{title}</span>
+                {to === "/#home-brands" && <ChevronLeft size={14} strokeWidth={1.5} aria-hidden="true" />}
+              </button>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
@@ -95,7 +164,7 @@ export function MobileNavigation({
         >
           <div className="storefront-account-heading">
             <SheetTitle>{user || "حساب کاربری"}</SheetTitle>
-            <SheetDescription>مدیریت حساب و سفارش‌ها</SheetDescription>
+            <SheetDescription>091200000</SheetDescription>
           </div>
           <nav
             aria-label="منوی حساب کاربری"

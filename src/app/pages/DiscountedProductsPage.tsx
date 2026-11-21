@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { getPaginationItems } from "@/app/lib/pagination"
 import type { ReactNode } from "react"
 import {
   ChevronDown,
@@ -101,7 +102,10 @@ export function ProductCatalogPage({
       options: ["نکست", "اکستریم والز", "وال‌مستر", "فاین دکور"],
     },
   ]
-  const totalPages = Math.ceil(DISC_PRODUCTS.length / PAGE_SIZE)
+  const demoDataPages = Math.ceil(DISC_PRODUCTS.length / PAGE_SIZE)
+  const totalPages = 21
+  // Reuse the demo catalog while previewing the 21-page pagination design.
+  const dataPage = ((page - 1) % demoDataPages) + 1
   const [secs, setSecs] = useState(4 * 3600 + 21 * 60 + 33)
 
   useEffect(() => {
@@ -134,8 +138,7 @@ export function ProductCatalogPage({
         dir="rtl"
         aria-label={discounted ? "فهرست کالاهای تخفیف‌دار" : "فهرست محصولات"}
       >
-        <div style={{ maxWidth: 1380, width: "100%" }}>
-          {!discounted && (
+        <div className="catalog-card-layout flex flex-col lg:block" style={{ maxWidth: 1380, width: "100%" }}>
             <>
               <div
                 className="mb-4 flex gap-2 overflow-x-auto lg:hidden [scrollbar-width:none]"
@@ -160,7 +163,7 @@ export function ProductCatalogPage({
                       className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-[#CA165C]"
                     >
                       <span
-                        className={`flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-light ${
+                        className={`flex h-7 items-center gap-1.5 rounded-full border px-3 text-[14px] font-light sm:text-xs ${
                           count
                             ? "border-[#CA165C] text-[#CA165C]"
                             : "border-gray-300 text-gray-800"
@@ -325,15 +328,13 @@ export function ProductCatalogPage({
                 </SheetContent>
               </Sheet>
             </>
-          )}
           {/* Main layout: sidebar + grid */}
-          <div className="grid items-start gap-6 lg:grid-cols-[312px_minmax(0,1fr)]">
+          <div className="contents items-start gap-6 lg:grid lg:grid-cols-[312px_minmax(0,1fr)]">
             {/* Filter sidebar — first in DOM = right side in RTL */}
-            <div className={`min-w-0 lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] ${sidebarContent ? "" : "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain"}`}>
+            <div className={`min-w-0 ${sidebarContent ? "order-first mb-4 lg:order-none lg:mb-0" : "hidden lg:block"} lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] ${sidebarContent ? "" : "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain"}`}>
+              {sidebarContent && <div className="mb-4 [&>*]:static [&>*]:mt-0">{sidebarContent}</div>}
               <aside
-                className={`${
-                  discounted ? "" : "hidden lg:block"
-                } w-full overflow-hidden rounded-2xl border border-gray-200 bg-white ${sidebarContent ? "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain" : ""}`}
+                className={`hidden lg:block w-full overflow-hidden rounded-2xl border border-gray-200 bg-white ${sidebarContent ? "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain" : ""}`}
                 aria-label="فیلتر محصولات"
               >
                 <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
@@ -453,7 +454,6 @@ export function ProductCatalogPage({
                   )
                 })}
               </aside>
-              {sidebarContent}
             </div>
 
             {/* Product area */}
@@ -461,9 +461,7 @@ export function ProductCatalogPage({
               <div
                 role="group"
                 aria-label="ترتیب نمایش محصولات"
-                className={`mb-5 ${
-                  discounted ? "flex" : "hidden lg:flex"
-                } w-full items-center gap-5 overflow-x-auto rounded-xl border border-gray-200 bg-white px-4 py-3`}
+                className="mb-5 hidden lg:flex w-full items-center gap-5 overflow-x-auto rounded-xl border border-gray-200 bg-white px-4 py-3"
               >
                 <span
                   className="shrink-0 text-base font-black text-gray-800"
@@ -488,8 +486,7 @@ export function ProductCatalogPage({
                   </button>
                 ))}
               </div>
-              {!discounted &&
-                (onlyAvailable ||
+              {(onlyAvailable ||
                   Object.values(selectedFilters).some(
                     (options) => options.length > 0,
                   )) && (
@@ -538,10 +535,10 @@ export function ProductCatalogPage({
                     </button>
                   </div>
                 )}
-              <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 xl:grid-cols-5">
+              <div className="catalog-product-grid">
                 {DISC_PRODUCTS.slice(
-                  (page - 1) * PAGE_SIZE,
-                  page * PAGE_SIZE,
+                  (dataPage - 1) * PAGE_SIZE,
+                  dataPage * PAGE_SIZE,
                 ).map((item) => (
                   <FestivalProductCard
                     key={item.code}
@@ -577,12 +574,8 @@ export function ProductCatalogPage({
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    border: discounted ? `1px solid ${PINK}` : "none",
-                    backgroundColor: discounted
-                      ? page === 1
-                        ? "#f9fafb"
-                        : "#fff"
-                      : "transparent",
+                    border: "none",
+                    backgroundColor: "transparent",
                     cursor: page === 1 ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -594,26 +587,23 @@ export function ProductCatalogPage({
                   <ChevronRight size={16} color={PINK} />
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (p) => (
+                {getPaginationItems(page, totalPages).map(
+                  (p) => typeof p === "string" ? (
+                    <span key={p} aria-hidden="true" className="flex h-9 w-5 items-center justify-center text-sm text-[#CA165C]">…</span>
+                  ) : (
                     <button
                       key={p}
+                      type="button"
+                      aria-label={`صفحه ${toPersianNum(p)}`}
+                      aria-current={p === page ? "page" : undefined}
                       onClick={() => setPage(p)}
                       style={{
                         width: 36,
                         height: 36,
                         borderRadius: 8,
-                        border:
-                          p === page
-                            ? discounted
-                              ? "none"
-                              : `1px solid ${PINK}`
-                            : discounted
-                              ? "1px solid #e5e7eb"
-                              : `1px solid ${PINK}`,
+                        border: `1px solid ${PINK}`,
                         backgroundColor: p === page ? PINK : "#fff",
-                        color:
-                          p === page ? "#fff" : discounted ? "#374151" : PINK,
+                        color: p === page ? "#fff" : PINK,
                         fontSize: 14,
                         fontWeight: p === page ? 900 : 400,
                         cursor: "pointer",
@@ -633,12 +623,8 @@ export function ProductCatalogPage({
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    border: discounted ? `1px solid ${PINK}` : "none",
-                    backgroundColor: discounted
-                      ? page === totalPages
-                        ? "#f9fafb"
-                        : "#fff"
-                      : "transparent",
+                    border: "none",
+                    backgroundColor: "transparent",
                     cursor: page === totalPages ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
