@@ -1,5 +1,5 @@
 // Images from the user-provided homepage reference. See public/images/home-reference/SOURCE.json.
-export const homeAssets: Record<number, string> = {
+const assetPaths: Record<number, string> = {
   "0": "/images/home-reference/asset-000.png",
   "1": "/images/home-reference/asset-001.webp",
   "2": "/images/home-reference/asset-002.png",
@@ -97,3 +97,7 @@ export const homeAssets: Record<number, string> = {
   "135": "/images/home-reference/asset-135.png",
   "136": "/images/home-reference/asset-136.png",
 }
+
+export const homeAssets: Record<number, string> = Object.fromEntries(
+  Object.entries(assetPaths).map(([key, value]) => [key, import.meta.env.BASE_URL + value.replace(/^\//, "")]),
+)

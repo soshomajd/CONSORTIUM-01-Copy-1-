@@ -755,7 +755,7 @@ export function ProductReviews({
       <Dialog open={waitsForApproval && submitted} onOpenChange={setSubmitted}>
         <DialogContent dir="rtl" style={{ fontFamily: "'Vazirmatn', sans-serif" }} className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[420px] overflow-y-auto rounded-[28px] border-gray-200 bg-white p-6 text-center motion-reduce:animate-none [&>button.absolute]:text-[#CA165C] [&>button.absolute]:left-4 [&>button.absolute]:right-auto [&>button.absolute]:flex [&>button.absolute]:size-11 [&>button.absolute]:items-center [&>button.absolute]:justify-center [&>button.absolute]:focus:outline-none [&>button.absolute]:focus:ring-0 [&>button.absolute]:focus:ring-offset-0 [&>button.absolute]:focus-visible:ring-0 [&>button.absolute]:focus-visible:ring-offset-0">
           <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#370080]/6 text-[#370080]" aria-hidden="true"><CheckCircle size={28} strokeWidth={1.6} /></span>
-ح          <div className="space-y-1">
+          <div className="space-y-1">
             <DialogTitle className="text-base font-semibold text-[#1E2939]">با موفقیت ثبت شد.</DialogTitle>
             <DialogDescription className="text-sm font-normal leading-7 text-[#6A7282]">نظر شما با موفقیت ثبت و پس از تایید در سایت منتشر خواهد شد.</DialogDescription>
           </div>

@@ -161,7 +161,7 @@ export function Footer({ home = false }: { home?: boolean }) {
                   className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
                 >
                   <img
-                    src={`/images/home-reference/footer-social-${index}.svg`}
+                    src={`${import.meta.env.BASE_URL}images/home-reference/footer-social-${index}.svg`}
                     alt=""
                     className="size-6"
                   />

@@ -82,6 +82,40 @@ Check availability before starting a second server in a local checkout.
 `pnpm-workspace.yaml` currently limits supported dependency architectures to Linux;
 inspect that setting when diagnosing a fresh Windows dependency installation.
 
+## Commit, push, and live publication
+
+The user explicitly requests that future requests to commit or push also publish
+the resulting version to the live server. Treat requests such as "commit",
+"push", "کامیت", and "پوش" as authorization to complete the checked commit,
+GitHub push, and Sites deployment together, without asking for confirmation again.
+An explicit later request for local-only work, commit-only work, or no deployment
+takes precedence. Ordinary edits alone do not imply a new commit/push request.
+
+- GitHub repository: `https://github.com/soshomajd/CONSORTIUM-01-Copy-1-`, branch
+  `main`. Preserve concurrent remote changes; never force-push to publish.
+- Live host: Sites, at
+  `https://consortium-design-demo.frosty-bow-3796.chatgpt.site`.
+- Reuse `project_id` from `.openai/hosting.json`:
+  `appgprj_6af819396db88191a0e8d9e302c41e69`. Preserve its public audience and
+  existing identity; do not create a replacement Site.
+
+For each requested commit/push, run relevant checks and the production build,
+commit and push the intended changes to GitHub, then follow the installed Sites
+skill to synchronize the same source state to the Site source repository, package
+the production output, save a version, and deploy it. Use the normal Sites build
+with root base URL, not the GitHub Pages subdirectory/hash-routing build. Read the
+current skill and obtain fresh source credentials as needed; never store tokens
+in this file, source, logs, or shell arguments. Verify that deployment succeeds
+before reporting the live site as updated, and include its public URL in the
+completion message. If a step fails, report exactly what was pushed or published
+and what remains incomplete; a successful GitHub push alone is not deployment.
+
+This file records the agent's workflow, not a Git hook or an automatic server-side
+trigger for commits/pushes performed outside the agent. GitHub Pages is a separate
+optional pipeline: `.github/workflows/deploy-pages.yml` exists, but Pages was not
+enabled at the last check. Do not rely on that workflow to update the live Sites
+URL. See `DEPLOYMENT.md` for the separate Pages setup.
+
 ## Source map
 
 | Location | Responsibility |
@@ -202,8 +236,7 @@ Baseline observed on 2026-11-09; recheck before treating these as current failur
   follow mandatory setup for code work unless the user explicitly overrides it.
 - Count-only additions and item-based cart operations coexist. `CartPage` saves
   quantity/removal edits without emitting `cartUpdate`, so header state can lag.
-- `ProfilePage.tsx` imports `Capture02.png` while the asset is `Capture02.PNG`;
-  verify exact casing before Linux deployment.
+- `ProfilePage.tsx` now matches the asset's `Capture02.PNG` casing for Linux builds.
 - No automated test suite is configured. Browser interaction and responsive layout
   have to be checked separately from build/type checks.
 
