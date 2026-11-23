@@ -13,7 +13,6 @@ import {
   Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -41,7 +40,7 @@ function DecorMediaUploadCards() {
 
 
   // مسیر واقعی عکس آلبوم پروژه را اینجا قرار بده.
-  const albumImage = `${import.meta.env.BASE_URL}images/album-cover.jpg`;
+  const albumImage = "/images/album-cover.jpg";
 
   const [rows, setRows] = DecorReact.useState<DemoDecorRow[]>([]);
   const [decorSubmitted, setDecorSubmitted] = useState(false);
@@ -2492,7 +2491,7 @@ function AlbumDiversityChartBox({ isActive }: { isActive: boolean }) {
                     <div className="mt-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border bg-white p-1 shadow-xs sm:h-20 sm:w-20">
 
                       <img
-                        src={`${import.meta.env.BASE_URL}images/album-cover.jpg`}
+                        src="/images/album-cover.jpg"
                         alt={album.name}
                         className="h-full w-full object-contain"
                       />
@@ -3636,7 +3635,7 @@ function PromotionHero({
 {/* تصویر تمام‌عرض با منحنی سفید در پایین */}
 <div className="relative h-[320px] w-full overflow-hidden sm:h-[440px] lg:h-[560px]">
   <img
-    src={`${import.meta.env.BASE_URL}images/promotion-hero.webp`}
+    src="/images/promotion-hero.webp"
     alt="آلبوم کاغذدیواری تکسچر"
     className="absolute inset-0 block h-full w-full object-cover"
     style={{ objectPosition: "center 42%" }}
@@ -4002,7 +4001,7 @@ export function SalesPricingDetailsPage() {
           to   { opacity: 1; }
         }
       `}</style>
-      <Header />
+
         <div className="px-4 pt-6 sm:px-6">
             <PromotionHero
                 onBack={() => navigate("/profile")}

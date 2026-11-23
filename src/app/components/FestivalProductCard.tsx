@@ -1,3 +1,4 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import React from "react"
 import { Package } from "lucide-react"
 import { Link } from "react-router"
@@ -35,8 +36,13 @@ export function FestivalProductCard({
   timer,
   amazingTypography = false,
   hasIncentive = false,
+  fastDelivery = false,
   fluid = false,
   showDiscount = true,
+  unavailable = false,
+  title = "تکسچر(1) 202011",
+  productHref = "/product/6135",
+  showReviews = true,
 }: {
   item: {
     code: string
@@ -46,14 +52,19 @@ export function FestivalProductCard({
   timer?: [string, string, string]
   amazingTypography?: boolean
   hasIncentive?: boolean
+  fastDelivery?: boolean
   fluid?: boolean
   showDiscount?: boolean
+  unavailable?: boolean
+  title?: string
+  productHref?: string
+  showReviews?: boolean
 }) {
   const afterPrice = Math.round(item.basePrice * (1 - item.discount / 100))
 
   return (
     <Link
-      to="/product/6135"
+      to={productHref}
       data-product-code={item.code}
       className="min-w-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-[3px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#CA165C]"
       style={{
@@ -96,7 +107,7 @@ export function FestivalProductCard({
             pointerEvents: "none",
           }}
         />
-        <span
+        {showReviews && <span
           style={{
             position: "absolute",
             bottom: 9,
@@ -109,8 +120,8 @@ export function FestivalProductCard({
             ...F,
           }}
         >
-          <span style={{ color: "#fbbf24" }}>★</span> 4/2 ( 15 دیدگاه )
-        </span>
+          <span style={{ color: "#fbbf24" }}>★</span> ۴/۲ ( ۱۵ دیدگاه )
+        </span>}
         {showDiscount && (
           <div
             style={{
@@ -135,7 +146,7 @@ export function FestivalProductCard({
                 ...F,
               }}
             >
-              {item.discount}٪
+              {toPersianDigits(item.discount)}٪
             </span>
           </div>
         )}
@@ -170,7 +181,7 @@ export function FestivalProductCard({
               ...F,
             }}
           >
-            تکسچر(1) 202011
+            {toPersianDigits(title)}
           </p>
         </div>
 
@@ -199,16 +210,18 @@ export function FestivalProductCard({
           <span
             style={{
               fontSize: amazingTypography ? 13 : 14,
-              fontWeight: amazingTypography ? 800 : 900,
-              color: "#9ca3af",
+              fontWeight: unavailable ? 600 : amazingTypography ? 800 : 900,
+              color: unavailable ? PINK : "#9ca3af",
               ...F,
             }}
           >
-            {toPersianNum(showDiscount ? afterPrice : item.basePrice)} تومان
+            {unavailable
+              ? "ناموجود"
+              : `${toPersianNum(showDiscount ? afterPrice : item.basePrice)} تومان`}
           </span>
         </div>
 
-        {showDiscount && hasIncentive && (
+        {hasIncentive && (
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <span
               style={{
@@ -247,6 +260,13 @@ export function FestivalProductCard({
           </div>
         )}
 
+        {fastDelivery && (
+          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: amazingTypography ? 13 : 11, fontWeight: amazingTypography ? 400 : 700, color: PINK, ...F }}>
+            <PickupTruckIcon size={12} />
+            <span>ارسال سریع به سراسر ایران</span>
+          </span>
+        )}
+
         {showDiscount && timer && (
           <>
             <div style={{ height: 1, backgroundColor: "#f3f4f6" }} />
@@ -278,7 +298,7 @@ export function FestivalProductCard({
                         ...F,
                       }}
                     >
-                      {unit}
+                      {toPersianDigits(unit)}
                     </span>
                     {index < 2 && (
                       <span

@@ -4,7 +4,6 @@ import {
   ShoppingBag, User, MapPin, Heart, LogOut,
   ChevronLeft, Package, Clock, CheckCircle, XCircle, Truck,
 } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import { getUser, clearUser } from "@/app/components/Header";
 
 const F = { fontFamily: "'Vazirmatn', sans-serif" };
@@ -71,7 +70,7 @@ export function ProfileOrdersPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50" style={F}>
-      <Header />
+
 
       <div className="mx-auto px-4 sm:px-6 py-8" style={{ maxWidth: "1380px" }}>
         <div className="flex gap-6 items-start">

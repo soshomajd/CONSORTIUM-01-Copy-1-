@@ -1,3 +1,4 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import { useId, useMemo, useState, type FormEvent } from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import {
@@ -15,6 +16,8 @@ import { Checkbox } from "./ui/checkbox"
 import {
   Dialog,
   DialogClose,
+  DialogContent,
+  DialogDescription,
   DialogOverlay,
   DialogPortal,
   DialogTitle,
@@ -23,6 +26,7 @@ import { Input } from "./ui/input"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Textarea } from "./ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 type Review = {
   id: string
@@ -91,7 +95,7 @@ const profileText = {
   heading: "text-base font-black text-gray-900 sm:text-xl",
   title: "text-sm font-semibold text-[#1E2939]",
   detail: "text-[13px] font-normal text-[#6A7282]",
-  label: "block text-sm font-semibold leading-6 text-[#1E2939]",
+  label: "block text-[15px] font-semibold leading-6 text-[#1E2939]",
 }
 const inputStyle =
   "rounded-xl border-gray-200 bg-[#FCFCFD]/50 text-right text-sm font-light text-[#6A7282] shadow-none placeholder:text-gray-400 focus-visible:border-gray-200 focus-visible:bg-[#F4F4F6] focus-visible:ring-0 md:text-sm"
@@ -131,14 +135,20 @@ export function ProductReviews({
   code,
   album,
   color,
+  startEmpty = false,
+  onReviewAdded,
 }: {
   productName: string
   code: string
   album: string
   color: string
+  startEmpty?: boolean
+  onReviewAdded?: (rating: number) => void
 }) {
   const formId = useId()
-  const [reviews, setReviews] = useState(initialReviews)
+  const [reviews, setReviews] = useState<Review[]>(() =>
+    startEmpty ? [] : initialReviews,
+  )
   const [sort, setSort] = useState<SortOrder>("newest")
   const [votes, setVotes] = useState<Record<string, Vote | undefined>>({})
   const [open, setOpen] = useState(false)
@@ -148,14 +158,25 @@ export function ProductReviews({
   const [recommendation, setRecommendation] = useState("")
   const [anonymous, setAnonymous] = useState(false)
   const [error, setError] = useState("")
+  const [validationAttempted, setValidationAttempted] = useState(false)
+  const [focusedField, setFocusedField] = useState<"title" | "body" | null>(null)
+  const titleMissing = validationAttempted && !title.trim()
+  const bodyMissing = validationAttempted && !body.trim()
+  const fieldTooltipStyle = "z-[60] max-w-[calc(100vw-3rem)] rounded-xl border border-gray-100 bg-white px-3 py-2 text-[15px] font-normal leading-6 text-[#CA165C] shadow-[0_4px_18px_rgba(0,0,0,0.08)] duration-200 ease-out motion-reduce:animate-none [&_svg]:bg-white [&_svg]:fill-white"
   const [submitted, setSubmitted] = useState(false)
+  const waitsForApproval = code === "6130" || code === "6135"
 
-  const average =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-  const recommendedPercent = Math.round(
-    (reviews.filter((review) => review.recommended).length / reviews.length) *
-      100,
-  )
+  const hasReviews = reviews.length > 0
+  const average = hasReviews
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0
+  const recommendedPercent = hasReviews
+    ? Math.round(
+        (reviews.filter((review) => review.recommended).length /
+          reviews.length) *
+          100,
+      )
+    : 0
   const sortedReviews = useMemo(
     () =>
       [...reviews].sort((a, b) => {
@@ -178,13 +199,28 @@ export function ProductReviews({
     setRecommendation("")
     setAnonymous(false)
     setError("")
+    setValidationAttempted(false)
+    setFocusedField(null)
     setOpen(true)
   }
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!title.trim() || !body.trim() || !rating || !recommendation) {
-      setError("عنوان، متن نظر، امتیاز و پیشنهاد خرید را کامل کنید.")
+    setValidationAttempted(true)
+    if (!title.trim() || !body.trim()) {
+      setError("")
+      const missing = !title.trim() ? "title" : "body"
+      setFocusedField(missing)
+      document.getElementById(`${formId}-${missing}`)?.focus()
+      return
+    }
+    if (!rating || !recommendation) {
+      setError("لطفا امتیاز و پیشنهاد خرید را مشخص کنید.")
+      return
+    }
+    if (waitsForApproval) {
+      setOpen(false)
+      setSubmitted(true)
       return
     }
     setReviews((previous) => [
@@ -197,13 +233,14 @@ export function ProductReviews({
         recommended: recommendation === "yes",
         buyer: false,
         date: new Date().toISOString(),
-        order: Math.max(...previous.map((review) => review.order)) + 1,
+        order: Math.max(0, ...previous.map((review) => review.order)) + 1,
         likes: 0,
         dislikes: 0,
       },
       ...previous,
     ])
     setSort("newest")
+    onReviewAdded?.(Number(rating))
     setSubmitted(true)
     setOpen(false)
   }
@@ -218,71 +255,68 @@ export function ProductReviews({
   return (
     <section
       id="product-reviews"
-      className="mt-8 text-sm font-light text-[#6A7282]"
+      className="mt-8 min-w-0 scroll-mt-[calc(var(--storefront-header-height,121px)+16px)] text-sm font-light text-[#6A7282]"
       style={{ fontFamily: "'Vazirmatn', sans-serif" }}
       dir="rtl"
       aria-label="بررسی و نظرات محصول"
     >
       <Tabs defaultValue="comments" dir="rtl" className="gap-6">
         <div className="w-full border-b border-gray-200 pb-4">
-        <TabsList className="h-auto w-full justify-start gap-2 rounded-none bg-transparent p-0 sm:w-fit">
-          <TabsTrigger value="comments" className={productTabStyle}>
-            نظرات کاربران{" "}
-            <span className="mr-1 rounded-md bg-white/15 px-1.5 py-0.5 text-xs font-bold text-white">
-              {fmt(reviews.length)}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="review" className={productTabStyle}>
-            بررسی محصول
-          </TabsTrigger>
-        </TabsList>
+          <TabsList className="h-auto w-full justify-start gap-2 rounded-none bg-transparent p-0 sm:w-fit">
+            <TabsTrigger value="comments" className={productTabStyle}>
+              نظرات کاربران{" "}
+              <span className="mr-1 rounded-md bg-white/15 px-1.5 py-0.5 text-xs font-bold text-white">
+                {fmt(reviews.length)}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="review" className={productTabStyle}>
+              بررسی محصول
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        <TabsContent
-          value="review"
-          className="rounded-3xl border border-gray-200 bg-[#FCFCFD]/50 p-6 sm:p-8"
-        >
-          <h2 className={profileText.heading}>{productName}</h2>
-          <p className={`mt-4 max-w-3xl leading-8 ${profileText.detail}`}>
-            کاغذ دیواری آلبوم {album}، کد {code}، با رنگ {color}. برای انتخاب
-            بهتر، نمونهٔ رنگ محصول را در نور فضای خود بررسی کنید.
-          </p>
-        </TabsContent>
+        <TabsContent value="review" className="m-0" />
 
         <TabsContent value="comments" className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className={profileText.heading}>از تجربهٔ دیگران بخوانید</h2>
+              <h2 className={profileText.heading}>
+                {hasReviews
+                  ? "از تجربهٔ دیگران بخوانید"
+                  : "اولین تجربه را شما بنویسید"}
+              </h2>
             </div>
-            <div
-              className="flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl p-1.5"
-              role="group"
-              aria-label="مرتب‌سازی نظرات"
-            >
-              {([
-                { id: "newest", label: "جدیدترین" },
-                { id: "oldest", label: "قدیمی‌ترین" },
-                { id: "popular", label: "محبوب‌ترین" },
-              ] as const).map((option) => (
-                <Button
-                  key={option.id}
-                  variant="ghost"
-                  type="button"
-                  aria-pressed={sort === option.id}
-                  onClick={() => setSort(option.id)}
-                  className={`min-h-11 rounded-xl border px-3 text-sm font-semibold shadow-none transition-colors ${focusRing} ${
-                    sort === option.id
-                      ? "border-[#CA165C] bg-white text-[#CA165C] hover:bg-gray-50 hover:text-[#CA165C]"
-                      : "border-transparent bg-[#370080]/20 text-[#370080] hover:bg-[#370080]/25 hover:text-[#370080]"
-                  }`}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+            {hasReviews && (
+              <div
+                className="flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl p-1.5"
+                role="group"
+                aria-label="مرتب‌سازی نظرات"
+              >
+                {([
+                  { id: "newest", label: "جدیدترین" },
+                  { id: "oldest", label: "قدیمی‌ترین" },
+                  { id: "popular", label: "محبوب‌ترین" },
+                ] as const).map((option) => (
+                  <Button
+                    key={option.id}
+                    variant="ghost"
+                    type="button"
+                    aria-pressed={sort === option.id}
+                    onClick={() => setSort(option.id)}
+                    className={`min-h-11 rounded-xl border px-3 text-sm font-semibold shadow-none transition-colors ${focusRing} ${
+                      sort === option.id
+                        ? "border-[#CA165C] bg-white text-[#CA165C] hover:bg-gray-50 hover:text-[#CA165C]"
+                        : "border-transparent bg-[#370080]/20 text-[#370080] hover:bg-[#370080]/25 hover:text-[#370080]"
+                    }`}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {submitted && (
+          {submitted && !waitsForApproval && (
             <p
               role="status"
               className={`flex items-center gap-2 rounded-2xl border border-gray-200 bg-[#FCFCFD]/50 px-4 py-3 leading-7 ${profileText.detail}`}
@@ -298,11 +332,21 @@ export function ProductReviews({
 
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_375px]">
             <div className="min-w-0 space-y-4">
+              {!hasReviews && (
+                <div className={`flex flex-col items-center justify-center rounded-3xl border border-gray-200 bg-white px-6 text-center sm:min-h-[340px] sm:px-10 ${code === "6130" ? "min-h-[180px] py-6 sm:py-10" : "min-h-[300px] py-10"}`}>
+                  <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-[#370080]/6 text-[#370080]" aria-hidden="true">
+                    <MessageSquare size={20} strokeWidth={1.5} />
+                  </span>
+                  <h3 className="text-sm font-normal leading-7 text-[#6A7282]">
+                    هنوز دیدگاهی برای این محصول ثبت نشده است.
+                  </h3>
+                </div>
+              )}
               {sortedReviews.map((review) => (
                 <article
                   key={review.id}
                   className="rounded-3xl border border-gray-200 bg-white p-5 sm:p-6"
-                  aria-label={`نظر ${review.name}`}
+                  aria-label={`نظر ${toPersianDigits(review.name)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -315,7 +359,7 @@ export function ProductReviews({
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={profileText.title}>
-                            {review.name}
+                            {toPersianDigits(review.name)}
                           </span>
                           {review.buyer && (
                             <span className="inline-flex items-center gap-1 rounded-lg bg-[#370080]/6 px-2 py-1 text-[13px] font-normal text-[#370080]">
@@ -337,12 +381,10 @@ export function ProductReviews({
                     <Stars rating={review.rating} />
                   </div>
                   <h3 className="mt-5 text-base font-semibold leading-7 text-[#1E2939]">
-                    {review.title}
+                    {toPersianDigits(review.title)}
                   </h3>
-                  <p
-                    className="mt-1 whitespace-pre-wrap break-words text-[15px] font-normal leading-7 text-[#6A7282]"
-                  >
-                    {review.body}
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-normal leading-7 text-[#6A7282]">
+                    {toPersianDigits(review.body)}
                   </p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                     <span
@@ -359,14 +401,14 @@ export function ProductReviews({
                         ? "خرید این محصول را پیشنهاد می‌کنم"
                         : "خرید این محصول را پیشنهاد نمی‌کنم"}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="mr-auto flex items-center gap-2 sm:mr-0">
                       <span className="ml-1 hidden text-sm font-light text-[#370080] sm:inline">
                         این نظر مفید بود؟
                       </span>
                       <Button
                         type="button"
                         variant="ghost"
-                        aria-label={`پسندیدن نظر ${review.name}`}
+                        aria-label={`پسندیدن نظر ${toPersianDigits(review.name)}`}
                         aria-pressed={votes[review.id] === "like"}
                         onClick={() => toggleVote(review.id, "like")}
                         className={`min-h-11 min-w-14 gap-2 rounded-xl border border-[#370080] px-3 text-[13px] font-normal text-[#370080] hover:bg-[#370080]/6 hover:text-[#370080] ${focusRing} ${
@@ -381,7 +423,7 @@ export function ProductReviews({
                       <Button
                         type="button"
                         variant="ghost"
-                        aria-label={`نپسندیدن نظر ${review.name}`}
+                        aria-label={`نپسندیدن نظر ${toPersianDigits(review.name)}`}
                         aria-pressed={votes[review.id] === "dislike"}
                         onClick={() => toggleVote(review.id, "dislike")}
                         className={`min-h-11 min-w-14 gap-2 rounded-xl border border-[#CA165C] px-3 text-[13px] font-normal text-[#CA165C] hover:bg-[#CA165C]/6 hover:text-[#CA165C] ${focusRing} ${
@@ -401,67 +443,77 @@ export function ProductReviews({
             </div>
 
             <aside
-              className="order-first rounded-3xl border border-gray-200 bg-white p-6 lg:order-none lg:sticky lg:top-24"
+              className="order-first min-w-0 rounded-3xl border border-gray-200 bg-white p-5 sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6 lg:order-none lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] lg:block"
               aria-label="امتیاز محصول و ثبت نظر"
             >
+              <div className="min-w-0">
               <p className="text-base font-semibold text-[#1E2939]">
-                امتیاز کاربران به این محصول
+                {hasReviews ? "امتیاز کاربران به این محصول" : "هنوز امتیازی ثبت نشده است"}
               </p>
-              <div className="mt-5 flex flex-wrap items-end gap-2">
-                <strong className="text-[56px] font-black leading-none text-gray-900">
-                  {average.toLocaleString("fa-IR", {
-                    maximumFractionDigits: 1,
-                  })}
-                </strong>
-                <span className="pb-1 text-sm font-normal text-[#6A7282]">
-                  از ۵ امتیاز - {fmt(reviews.length)} دیدگاه
-                </span>
-              </div>
-              <div
-                className="mt-6 mr-auto ml-0 w-3/4 space-y-2.5"
-                aria-label="توزیع امتیازها"
-              >
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const count = reviews.filter(
-                    (review) => review.rating === star,
-                  ).length
-                  return (
-                    <div
-                      key={star}
-                      className="flex items-center gap-2.5 text-sm font-normal text-[#6A7282]"
-                      aria-label={`${fmt(star)} ستاره: ${fmt(count)} نظر`}
-                    >
-                      <span className="w-3 text-center">{fmt(star)}</span>
-                      <div
-                        dir="ltr"
-                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F4F4F6]"
-                      >
+              {hasReviews ? (
+                <>
+                  <div className="mt-5 flex flex-wrap items-end gap-2">
+                    <strong className="text-[56px] font-black leading-none text-gray-900">
+                      {average.toLocaleString("fa-IR", {
+                        maximumFractionDigits: 1,
+                      })}
+                    </strong>
+                    <span className="pb-1 text-sm font-normal text-[#6A7282]">
+                      از ۵ امتیاز - {fmt(reviews.length)} دیدگاه
+                    </span>
+                  </div>
+                  <div
+                    className="mt-6 mr-auto ml-0 w-3/4 space-y-2.5"
+                    aria-label="توزیع امتیازها"
+                  >
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = reviews.filter(
+                        (review) => review.rating === star,
+                      ).length
+                      return (
                         <div
-                          className="h-full rounded-full bg-[#370080] transition-[width] duration-500 motion-reduce:transition-none"
-                          style={{
-                            width: `${(count / reviews.length) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+                          key={star}
+                          className="flex items-center gap-2.5 text-sm font-normal text-[#6A7282]"
+                          aria-label={`${fmt(star)} ستاره: ${fmt(count)} نظر`}
+                        >
+                          <span className="w-3 text-center">{fmt(star)}</span>
+                          <div
+                            dir="ltr"
+                            className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F4F4F6]"
+                          >
+                            <div
+                              className="h-full rounded-full bg-[#370080] transition-[width] duration-500 motion-reduce:transition-none"
+                              style={{
+                                width: `${(count / reviews.length) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p
+                    className={`mt-5 flex items-start gap-2 ${reviewBodyStyle}`}
+                  >
+                    <ThumbsUp
+                      size={15}
+                      className="mt-1 shrink-0 text-[#370080]"
+                      aria-hidden="true"
+                    />
+                    {fmt(recommendedPercent)}٪ کاربران، خرید این محصول را
+                    پیشنهاد کرده‌اند.
+                  </p>
+                </>
+              ) : null}
               </div>
-              <p className={`mt-5 flex items-start gap-2 ${reviewBodyStyle}`}>
-                <ThumbsUp
-                  size={15}
-                  className="mt-1 shrink-0 text-[#370080]"
-                  aria-hidden="true"
-                />
-                {fmt(recommendedPercent)}٪ کاربران، خرید این محصول را پیشنهاد
-                کرده‌اند.
-              </p>
-              <div className="mt-6 border-t border-gray-200 pt-5">
+              <div className="mt-6 border-t border-gray-200 pt-5 sm:mt-0 sm:self-center sm:border-t-0 sm:border-r sm:pr-6 sm:pt-0 lg:mt-6 lg:border-t lg:border-r-0 lg:pr-0 lg:pt-5">
                 <p className="text-base font-semibold text-[#1E2939]">
-                  نظر شما برای ما ارزشمنده!
+                  {hasReviews
+                    ? "نظر شما برای ما ارزشمنده!"
+                    : "اولین نظر را شما ثبت کنید!"}
                 </p>
                 <p className="mt-1 text-sm font-normal leading-7 text-[#6A7282]">
-                  از کیفیت، رنگ و تجربهٔ خریدتان بگویید.
+                 نظراتان درباره این کالا را بنویسید.
                 </p>
                 <Button
                   type="button"
@@ -469,7 +521,7 @@ export function ProductReviews({
                   className={`mt-4 min-h-12 w-full gap-2 rounded-xl border border-[#CA165C] bg-[#CA165C] text-base font-medium text-white shadow-none hover:bg-[#CA165C] ${focusRing}`}
                 >
                   <Plus size={18} aria-hidden="true" />
-                  ثبت نظر
+                  {hasReviews ? "ثبت نظر" : "ثبت اولین نظر"}
                 </Button>
               </div>
             </aside>
@@ -498,13 +550,13 @@ export function ProductReviews({
                   variant="ghost"
                   size="icon"
                   aria-label="بستن فرم ثبت نظر"
-                  className="size-11 shrink-0 rounded-xl bg-transparent text-[#CA165C] hover:bg-transparent hover:text-[#CA165C] focus-visible:ring-2 focus-visible:ring-[#CA165C]/40 focus-visible:ring-offset-2"
+                  className="size-11 shrink-0 rounded-xl bg-transparent text-[#CA165C] hover:bg-transparent hover:text-[#CA165C] focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 >
                   <X size={24} className="size-6" />
                 </Button>
               </DialogClose>
             </div>
-            <form onSubmit={submitReview} className="mt-3 space-y-5">
+            <form noValidate onSubmit={submitReview} className="mt-3 space-y-5">
               <div className="space-y-2">
                 <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-light leading-7 text-gray-400">
                   <Checkbox
@@ -512,7 +564,7 @@ export function ProductReviews({
                     onCheckedChange={(checked) =>
                       setAnonymous(checked === true)
                     }
-                    className="size-5 rounded-md border-gray-200 data-[state=checked]:border-[#370080] data-[state=checked]:bg-[#370080] focus-visible:ring-[#370080]/20"
+                    className="size-5 rounded-md border-gray-200 data-[state=checked]:border-[#ca165c] data-[state=checked]:bg-[#ca165c] focus-visible:ring-[#ca165c]/20"
                   />
                   ارسال نظر به‌صورت ناشناس
                 </label>
@@ -522,38 +574,63 @@ export function ProductReviews({
                     className={profileText.label}
                   >
                     عنوان نظر{" "}
-                    <span className="text-[13px] font-normal text-[#1E2939]">
+                    <span className={`text-[13px] font-normal ${title.trim() ? "text-[#1E2939]" : "text-[#1E2939]"}`}>
                       (الزامی)
                     </span>
                   </label>
+                  <Tooltip open={titleMissing && focusedField === "title"} onOpenChange={next => { if (!next) setFocusedField(null) }}>
+                  <TooltipTrigger asChild>
+                  <span className="block">
                   <Input
                     id={`${formId}-title`}
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
+                    onFocus={() => setFocusedField("title")}
+                    onBlur={() => setFocusedField(null)}
+                    aria-invalid={titleMissing}
+                    aria-describedby={titleMissing && focusedField === "title" ? `${formId}-title-tooltip` : undefined}
                     maxLength={100}
                     required
-                    placeholder="تجربه‌تان را در یک جمله بگویید"
                     className={`h-12 px-4 ${inputStyle}`}
                   />
+                  </span>
+                  </TooltipTrigger>
+                  <TooltipContent id={`${formId}-title-tooltip`} side="bottom" align="end" sideOffset={6} collisionPadding={12} className={fieldTooltipStyle} style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+                    لطفا عنوان نظر را وارد کنید.
+                  </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor={`${formId}-body`} className={profileText.label}>
                   متن نظر{" "}
-                  <span className="text-[13px] font-normal text-[#1E2939]">
+                  <span className={`text-[13px] font-normal ${body.trim() ? "text-[#1E2939]" : "text-[#1E2939]"}`}>
                     (الزامی)
                   </span>
                 </label>
+                <Tooltip open={bodyMissing && focusedField === "body"} onOpenChange={next => { if (!next) setFocusedField(null) }}>
+                <TooltipTrigger asChild>
+                <span className="block">
                 <Textarea
                   id={`${formId}-body`}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
+                  onFocus={() => setFocusedField("body")}
+                  onBlur={() => setFocusedField(null)}
+                  aria-invalid={bodyMissing}
+                  aria-describedby={bodyMissing && focusedField === "body" ? `${formId}-body-tooltip` : undefined}
                   maxLength={1200}
                   required
-                  placeholder="از کیفیت، رنگ و تجربهٔ استفاده بنویسید…"
+                  placeholder="نظرتان درباره این کالا را بنویسید."
                   className={`min-h-28 resize-y px-4 py-3 leading-7 ${inputStyle}`}
                 />
-                <p className={`text-left ${profileText.detail}`}>
+                </span>
+                </TooltipTrigger>
+                <TooltipContent id={`${formId}-body-tooltip`} side="bottom" align="end" sideOffset={6} collisionPadding={12} className={fieldTooltipStyle} style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+                  لطفا متن نظر را وارد کنید.
+                </TooltipContent>
+                </Tooltip>
+                <p className="text-left text-sm font-light leading-7 text-gray-400">
                   {fmt(body.length)} / ۱۲۰۰
                 </p>
               </div>
@@ -570,7 +647,7 @@ export function ProductReviews({
                   }}
                   aria-labelledby={`${formId}-rating-label`}
                   dir="rtl"
-                  className="mt-3 flex flex-wrap justify-end gap-2"
+                  className="mt-3 flex flex-wrap justify-end gap-1 sm:gap-2"
                 >
                   {[1, 2, 3, 4, 5].map((star) => (
                     <label key={star} className="cursor-pointer">
@@ -635,13 +712,13 @@ export function ProductReviews({
                           option.value === "no"
                             ? `text-[#CA165C] ${
                                 recommendation === "no"
-                                  ? "border-[#CA165C]/40 bg-[#CA165C]/6"
-                                  : "border-[#CA165C]/15"
+                                  ? "border-[#CA165C] bg-[#CA165C]/6"
+                                  : "border-[#CA165C]"
                               }`
                             : `text-[#370080] ${
                                 recommendation === "yes"
-                                  ? "border-[#370080]/35 bg-[#370080]/6"
-                                  : "border-gray-200"
+                                  ? "border-[#370080] bg-[#370080]/6"
+                                  : "border-[#370080]"
                               }`
                         }`}
                       >
@@ -674,6 +751,16 @@ export function ProductReviews({
             </form>
           </DialogPrimitive.Content>
         </DialogPortal>
+      </Dialog>
+      <Dialog open={waitsForApproval && submitted} onOpenChange={setSubmitted}>
+        <DialogContent dir="rtl" style={{ fontFamily: "'Vazirmatn', sans-serif" }} className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[420px] overflow-y-auto rounded-[28px] border-gray-200 bg-white p-6 text-center motion-reduce:animate-none [&>button.absolute]:text-[#CA165C] [&>button.absolute]:left-4 [&>button.absolute]:right-auto [&>button.absolute]:flex [&>button.absolute]:size-11 [&>button.absolute]:items-center [&>button.absolute]:justify-center [&>button.absolute]:focus:outline-none [&>button.absolute]:focus:ring-0 [&>button.absolute]:focus:ring-offset-0 [&>button.absolute]:focus-visible:ring-0 [&>button.absolute]:focus-visible:ring-offset-0">
+          <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#370080]/6 text-[#370080]" aria-hidden="true"><CheckCircle size={28} strokeWidth={1.6} /></span>
+ح          <div className="space-y-1">
+            <DialogTitle className="text-base font-semibold text-[#1E2939]">با موفقیت ثبت شد.</DialogTitle>
+            <DialogDescription className="text-sm font-normal leading-7 text-[#6A7282]">نظر شما با موفقیت ثبت و پس از تایید در سایت منتشر خواهد شد.</DialogDescription>
+          </div>
+          <Button type="button" onClick={() => setSubmitted(false)} className={`mt-2 min-h-11 w-full rounded-xl bg-[#CA165C] text-sm font-medium text-white hover:bg-[#CA165C] hover:text-white ${focusRing}`}>بستن</Button>
+        </DialogContent>
       </Dialog>
     </section>
   )

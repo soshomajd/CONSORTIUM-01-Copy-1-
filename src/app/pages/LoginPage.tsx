@@ -11,7 +11,7 @@ export function LoginPage() {
   const [phone, setPhone] = useState("");
 
   const handleNext = () => {
-    navigate("/otp", { state: { phone: phone || "09123456789" } });
+    navigate("/otp", { state: { phone: phone || "091000000" } });
   };
 
   return (

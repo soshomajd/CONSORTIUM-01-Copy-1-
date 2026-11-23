@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router";
 import { Pencil, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-import { Header } from "@/app/components/Header";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import samanLogo from "@/imports/______-______-____-___-____-_____-_____.png";
 import parsianLogo from "@/imports/images.jfif";
@@ -141,7 +140,7 @@ export function OrderConfirmPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <AnimatePresence>
         {timerSec !== null && (

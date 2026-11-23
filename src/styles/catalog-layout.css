@@ -1,0 +1,27 @@
+/* Shared sizing for the product grid and the full-width related-products rail. */
+.catalog-card-layout {
+  --catalog-columns: 2;
+  --catalog-gap: 14px;
+  --catalog-sidebar: 0px;
+}
+
+.catalog-product-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--catalog-columns), minmax(0, 1fr));
+  gap: var(--catalog-gap);
+}
+
+.catalog-related-track { gap: var(--catalog-gap); }
+.catalog-related-slide {
+  flex-basis: calc((100% - var(--catalog-sidebar) - (var(--catalog-columns) - 1) * var(--catalog-gap)) / var(--catalog-columns));
+}
+
+@media (min-width: 768px) {
+  .catalog-card-layout { --catalog-columns: 3; }
+}
+@media (min-width: 1024px) {
+  .catalog-card-layout { --catalog-sidebar: 336px; }
+}
+@media (min-width: 1280px) {
+  .catalog-card-layout { --catalog-columns: 5; }
+}

@@ -1,12 +1,12 @@
+import { toPersianDigits } from "@/app/lib/persian-digits";
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronRight, ChevronLeft, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Link } from "react-router";
-import { Header } from "@/app/components/Header";
 import { FestivalProductCard } from "@/app/components/FestivalProductCard";
 import productImg  from "@/imports/202067-after.jpg";
 
-const PURPLE = "#370080";
+const BLACK = "#000000";
 const PINK   = "#CA165C";
 const F      = { fontFamily: "'Vazirmatn', sans-serif" };
 
@@ -94,7 +94,7 @@ function HangingTag() {
               color: "rgba(255,255,255,0.6)",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              fontFamily: "sans-serif",
+              fontFamily: F.fontFamily,
             }}>SPECIAL OFFER</span>
             <span style={{
               fontSize: 22, fontWeight: 900,
@@ -160,7 +160,7 @@ function BannerSection() {
             {[36, 20, 36, 20, 36].map((size, row) => (
               <div key={row} style={{ display: "flex", whiteSpace: "nowrap", lineHeight: 1, overflow: "hidden" }}>
                 {Array.from({ length: 60 }).map((_, i) => (
-                  <span key={i} style={{ fontSize: size, fontWeight: 900, color: "rgba(255,255,255,0.06)", letterSpacing: "0.15em", userSelect: "none", fontFamily: "monospace" }}>%</span>
+                  <span key={i} style={{ fontSize: size, fontWeight: 900, color: "rgba(255,255,255,0.06)", letterSpacing: "0.15em", userSelect: "none", fontFamily: F.fontFamily }}>%</span>
                 ))}
               </div>
             ))}
@@ -264,7 +264,7 @@ function AmazingOffersCarousel() {
           <div style={{ display: "flex", alignItems: "center", gap: 4, direction: "ltr" }}>
             {[hh, mm2, ss3].map((u, i) => (
               <React.Fragment key={i}>
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", minWidth: 26, textAlign: "center", ...F }}>{u}</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", minWidth: 26, textAlign: "center", ...F }}>{toPersianDigits(u)}</span>
                 {i < 2 && <span style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.6)" }}>:</span>}
               </React.Fragment>
             ))}
@@ -312,7 +312,7 @@ function AmazingOffersCarousel() {
                   textDecoration: "none",
                   color: "inherit",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(55,0,128,0.1)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.1)"; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.05)"; }}
                 >
                   {/* Content (right side in RTL = first in DOM) */}
@@ -320,31 +320,31 @@ function AmazingOffersCarousel() {
                     {/* Badge */}
                     <span style={{ fontSize: 16, fontWeight: 900, color: "#CA165C", padding: 0, alignSelf: "flex-start", ...F }}>پیشنهاد شگفت‌انگیز ویژه</span>
                     {/* Title */}
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#111827", lineHeight: 1.6, ...F }}>{item.name}</p>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#111827", lineHeight: 1.6, ...F }}>{toPersianDigits(item.name)}</p>
                     {/* Rating */}
                     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b", ...F }}>★ {item.rating}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b", ...F }}>★ {toPersianDigits(item.rating)}</span>
                     </div>
                     {/* Prices */}
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                       <span style={{ fontSize: 13, color: "#9ca3af", textDecoration: "line-through", textAlign: "left", display: "block", ...F }}>{fmt(item.basePrice)} تومان</span>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 8 }}>
-                        <span style={{ fontSize: 11, fontWeight: 900, color: "#fff", backgroundColor: "rgba(202, 22, 92, 0.85)", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...F }}>{item.discount}٪</span>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: "#fff", backgroundColor: "rgba(202, 22, 92, 0.85)", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...F }}>{toPersianDigits(item.discount)}٪</span>
                         <span style={{ fontSize: 14, fontWeight: 900, color: "#9ca3af", ...F }}>{fmt(afterPrice)} تومان</span>
                       </div>
                     </div>
                     {/* Progress */}
                     <div style={{ marginTop: 4, width: "100%" }}>
                       <div style={{ height: 4, backgroundColor: "#e5e7eb", borderRadius: 9999, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${item.sold}%`, backgroundColor: PURPLE, borderRadius: 9999, transition: "width 0.6s ease" }} />
+                        <div style={{ height: "100%", width: `${item.sold}%`, backgroundColor: BLACK, borderRadius: 9999, transition: "width 0.6s ease" }} />
                       </div>
-                      <p style={{ margin: "4px 0 0", fontSize: 13, color: PURPLE, ...F }}>{toPersianNum(item.sold)}٪ فروش رفته</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 13, color: BLACK, ...F }}>{toPersianNum(item.sold)}٪ فروش رفته</p>
                     </div>
                     {/* Timer */}
                     <div style={{ display: "flex", alignItems: "center", gap: 3, direction: "ltr", justifyContent: "flex-start", alignSelf: "flex-start" }}>
                       {[hh, mm2, ss3].map((u, i) => (
                         <React.Fragment key={i}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: PINK, fontVariantNumeric: "tabular-nums", ...F }}>{u}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: PINK, fontVariantNumeric: "tabular-nums", ...F }}>{toPersianDigits(u)}</span>
                           {i < 2 && <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700 }}>:</span>}
                         </React.Fragment>
                       ))}
@@ -364,7 +364,7 @@ function AmazingOffersCarousel() {
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 16 }}>
           {Array.from({ length: maxIdx + 1 }).map((_, i) => (
             <button key={i} onClick={() => setIdx(i)}
-              style={{ width: i === idx ? 20 : 8, height: 8, borderRadius: 9999, border: "none", cursor: "pointer", backgroundColor: i === idx ? PURPLE : "#d1d5db", transition: "all 0.3s", padding: 0 }}
+              style={{ width: i === idx ? 20 : 8, height: 8, borderRadius: 9999, border: "none", cursor: "pointer", backgroundColor: i === idx ? BLACK : "#d1d5db", transition: "all 0.3s", padding: 0 }}
             />
           ))}
         </div>
@@ -425,7 +425,7 @@ function Festival2Section() {
                 <React.Fragment key={i}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <div style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 7px", minWidth: 28, textAlign: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", ...F }}>{unit}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", ...F }}>{toPersianDigits(unit)}</span>
                     </div>
                   </div>
                   {i < 2 && <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>:</span>}
@@ -683,7 +683,7 @@ function CouponCard({ coupon }: { coupon: CouponData }) {
           width: NOTCH_R * 2, height: NOTCH_R * 2,
           borderRadius: "50%", background: "#fff", zIndex: 2,
         }} />
-        <span style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1, ...F }}>{coupon.discount}</span>
+        <span style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1, ...F }}>{toPersianDigits(coupon.discount)}</span>
         <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.85)", ...F }}>درصد</span>
         <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", ...F }}>تخفیف</span>
       </div>
@@ -744,7 +744,7 @@ function CouponCard({ coupon }: { coupon: CouponData }) {
               borderRadius: 8,
               padding: "4px 10px",
             }}>
-              <span style={{ fontSize: 14, fontWeight: 900, color: PINK, letterSpacing: "0.08em", fontFamily: "monospace" }}>{coupon.code}</span>
+              <span style={{ fontSize: 14, fontWeight: 900, color: PINK, letterSpacing: "0.08em", fontFamily: F.fontFamily }}>{toPersianDigits(coupon.code)}</span>
             </div>
           ) : (
             <button
@@ -867,7 +867,7 @@ function DiscountCodeSection() {
                     {f.label}
                     {f.key !== "all" && (
                       <span style={{ marginRight: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: active ? "rgba(255,255,255,0.28)" : "#f3f4f6", fontSize: 12, fontWeight: 700, color: active ? "#fff" : "#9ca3af", ...F }}>
-                        {ALL_COUPONS.filter(c => c.category === f.key).length}
+                        {toPersianDigits(ALL_COUPONS.filter(c => c.category === f.key).length)}
                       </span>
                     )}
                   </button>
@@ -896,7 +896,7 @@ function DiscountCodeSection() {
                 >
                   {activeBrand ? activeBrand.label : "برند"}
                   <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: brandActive ? "rgba(255,255,255,0.28)" : "#f3f4f6", fontSize: 12, fontWeight: 700, color: brandActive ? "#fff" : "#9ca3af", ...F }}>
-                    {brandActive ? ALL_COUPONS.filter(c => c.category === activeFilter).length : brandTotalCount}
+                    {toPersianDigits(brandActive ? ALL_COUPONS.filter(c => c.category === activeFilter).length : brandTotalCount)}
                   </span>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight: 2, transform: brandDropOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
                     <path d="M2 4l4 4 4-4" stroke={brandActive ? "#fff" : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -924,7 +924,7 @@ function DiscountCodeSection() {
                           >
                             <span>{b.label}</span>
                             <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: isActive ? PINK : "#f3f4f6", fontSize: 12, fontWeight: 700, color: isActive ? "#fff" : "#9ca3af", ...F }}>
-                              {ALL_COUPONS.filter(c => c.category === b.key).length}
+                              {toPersianDigits(ALL_COUPONS.filter(c => c.category === b.key).length)}
                             </span>
                           </button>
                         );
@@ -1014,7 +1014,7 @@ function DiscountCodeSection() {
 export function DiscountsPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
       <HeroSection />
       <BannerSection />
       <Festival2Section />

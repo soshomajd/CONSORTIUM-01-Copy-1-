@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { X } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { getCart, saveCart, CartItem } from "@/app/store/cart";
@@ -29,14 +28,14 @@ export function CartPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <p className="text-gray-400 text-lg mb-4" style={F}>سبد خرید شما خالی است</p>
-            <button onClick={() => navigate("/")} className="px-6 py-3 bg-[#3d1a6e] text-white rounded-xl text-sm font-bold hover:bg-[#2d1255] transition-colors" style={F}>
+            <p className="mb-4 text-[15px] font-normal text-[#6A7282] sm:text-lg sm:text-gray-400" style={F}>سبد خرید شما خالی است</p>
+            <button onClick={() => navigate("/")} className="px-6 py-3 bg-[#CA165C] sm:bg-[#3d1a6e] text-white rounded-xl text-sm font-bold hover:bg-[#CA165C]/90 sm:hover:bg-[#2d1255] transition-colors" style={F}>
               ادامه خرید
             </button>
           </div>

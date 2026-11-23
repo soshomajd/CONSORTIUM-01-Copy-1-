@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
-import { Header } from "@/app/components/Header";
 import albumCover from "@/imports/Album-Coming_Soon-V01.png";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 
@@ -58,7 +57,7 @@ export function AlbumPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-white" style={F}>
-      <Header />
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 

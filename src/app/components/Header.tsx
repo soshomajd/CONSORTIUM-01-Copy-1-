@@ -1,238 +1,303 @@
-import { useState, useRef, useEffect } from "react";
-import { getCartCount } from "@/app/lib/cart";
-import { getCart } from "@/app/store/cart";
-import { useNavigate, Link } from "react-router";
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, ChevronLeft } from "lucide-react";
-import logoImg from "@/imports/LOGO01.png";
-import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
-import demoImg1 from "@/imports/202054447-mockup3.jpg";
-import demoImg2 from "@/imports/202057-mockup3.jpg";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
-import { saveCart } from "@/app/store/cart";
+import { useEffect, useRef, useState } from "react"
+import type { FormEvent } from "react"
+import { Link, useLocation, useNavigate } from "react-router"
+import { useReducedMotion } from "motion/react"
+import { Search, X, ChevronLeft } from "lucide-react"
+import { getCartCount } from "@/app/lib/cart"
+import { MobileNavigation } from "./MobileNavigation"
+import { getCart } from "@/app/store/cart"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover"
+import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
+import { homeAssets as assets } from "@/app/components/home/assets"
+import "@/styles/home-reference.css"
 
-const DEMO_ITEMS = [
-  { id: "demo-1", name: "کاغذ دیواری طرح مارموریت", code: "13120-A", unitPrice: 285000, qty: 1, img: demoImg1 },
-  { id: "demo-2", name: "کاغذ دیواری طرح هندسی مدرن", code: "13120-B", unitPrice: 320000, qty: 2, img: demoImg2 },
-];
-
-const F = { fontFamily: "'Vazirmatn', sans-serif" };
-const navLinks = ["برند", "خرید محصولات", "درباره ما", "تماس با ما"];
+const notificationIcon = `${import.meta.env.BASE_URL}images/header/notification.png`
 
 export function getUser(): string | null {
-  return localStorage.getItem("consortiumUser");
+  return localStorage.getItem("consortiumUser")
 }
-
 export function setUser(name: string) {
-  localStorage.setItem("consortiumUser", name);
+  localStorage.setItem("consortiumUser", name)
 }
-
 export function clearUser() {
-  localStorage.removeItem("consortiumUser");
+  localStorage.removeItem("consortiumUser")
 }
 
+export function openMobileProfileMenu() {
+  window.dispatchEvent(new Event("openMobileProfileMenu"))
+}
 
 export function Header() {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [user, setUserState] = useState<string | null>(getUser);
-  const [cartCount, setCartCount] = useState(getCartCount);
-  const [cartItems, setCartItems] = useState(getCart);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const cartRef = useRef<HTMLDivElement>(null);
-
+  const navigate = useNavigate()
+  const location = useLocation()
+  const reduceMotion = useReducedMotion()
+  const headerRef = useRef<HTMLElement>(null)
+  const [announcement, setAnnouncement] = useState(true)
+  const [query, setQuery] = useState("")
+  const [cartCount, setCartCount] = useState(getCartCount)
+  const [cartItems, setCartItems] = useState(getCart)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const user = getUser()
   useEffect(() => {
-    // Pre-populate cart with demo items on first load
-    const existing = getCart();
-    if (existing.length === 0) {
-      saveCart(DEMO_ITEMS);
-      const total = DEMO_ITEMS.reduce((s, i) => s + i.qty, 0);
-      localStorage.setItem("cartCount", String(total));
-      window.dispatchEvent(new Event("cartUpdate"));
+    const openMenu = () => {
+      if (window.matchMedia("(max-width: 1023px)").matches) setMobileMenuOpen(true)
     }
-
-    const onStorage = () => setUserState(getUser());
-    const onCart = () => { setCartCount(getCartCount()); setCartItems(getCart()); };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("cartUpdate", onCart);
-    setUserState(getUser());
-    setCartCount(getCartCount());
-    setCartItems(getCart());
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("cartUpdate", onCart);
-    };
-  }, []);
-
+    window.addEventListener("openMobileProfileMenu", openMenu)
+    return () => window.removeEventListener("openMobileProfileMenu", openMenu)
+  }, [])
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false);
-      if (cartRef.current && !cartRef.current.contains(e.target as Node)) setCartOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleLogout = () => {
-    clearUser();
-    setUserState(null);
-    setDropdownOpen(false);
-    navigate("/login");
-  };
-
-  const fmt = (n: number) => n.toLocaleString("fa-IR");
+    const update = () => {
+      setCartCount(getCartCount())
+      setCartItems(getCart())
+    }
+    window.addEventListener("cartUpdate", update)
+    window.addEventListener("storage", update)
+    return () => {
+      window.removeEventListener("cartUpdate", update)
+      window.removeEventListener("storage", update)
+    }
+  }, [])
+  useEffect(() => {
+    const element = headerRef.current
+    if (!element) return
+    const update = () =>
+      document.documentElement.style.setProperty(
+        "--storefront-header-height",
+        element.getBoundingClientRect().height + "px",
+      )
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty(
+        "--storefront-header-height",
+      )
+    }
+  }, [])
+  useEffect(() => {
+    setCartOpen(false)
+    setCartItems(getCart())
+    setCartCount(getCartCount())
+  }, [location.pathname])
+  useEffect(() => {
+    if (location.pathname !== "/" || location.hash !== "#home-brands") return
+    const frame = requestAnimationFrame(() =>
+      document.getElementById("home-brands")?.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start",
+      }),
+    )
+    return () => cancelAnimationFrame(frame)
+  }, [location.pathname, location.hash, reduceMotion])
+  function goTo(id: string) {
+    if (location.pathname !== "/") {
+      navigate("/#" + id)
+      return
+    }
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    })
+  }
+  function submitSearch(event: FormEvent) {
+    event.preventDefault()
+    navigate(
+      query.trim() === "6135"
+        ? "/product/6135"
+        : `/products${
+            query.trim() ? `?search=${encodeURIComponent(query.trim())}` : ""
+          }`,
+    )
+  }
+  const search = (
+    <form className="home-search" role="search" onSubmit={submitSearch}>
+      <input
+        aria-label="جستجوی کد، آلبوم"
+        placeholder="جستجوی کد، آلبوم"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <button type="submit" aria-label="جستجو">
+        <Search size={22} strokeWidth={1.8} />
+      </button>
+    </form>
+  )
 
   return (
-    <header className="bg-white sticky top-0 z-50" style={F}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16 gap-4">
-
-          {/* Logo — right */}
-          <div className="shrink-0 cursor-pointer" onClick={() => navigate("/")}>
-            <ImageWithFallback src={logoImg} alt="کنسرسیوم کاغذدیواری" className="h-14 w-auto object-contain" />
-          </div>
-
-          {/* Center: search + nav */}
-          <div className="flex-1 flex items-center justify-center gap-6">
-            <div className="hidden md:flex items-center border border-gray-300 rounded-full px-4 py-2 gap-2 w-52">
-              <Search size={15} className="text-gray-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="جستجوی کد، آلبوم"
-                className="bg-transparent text-sm placeholder-gray-400 outline-none w-full text-right"
-                style={F}
-              />
-            </div>
-            <nav className="hidden lg:flex items-center gap-1">
-              {navLinks.map(l => (
-                l === "خرید محصولات" ? <Link key={l} to="/products" className="text-sm text-gray-700 hover:text-[#3d1a6e] px-3 py-2 rounded-lg hover:bg-purple-50 transition-all font-medium whitespace-nowrap" style={F}>{l}</Link> :
-                <button key={l} className="text-sm text-gray-700 hover:text-[#3d1a6e] px-3 py-2 rounded-lg hover:bg-purple-50 transition-all font-medium whitespace-nowrap" style={F}>{l}</button>
-              ))}
+    <>
+      <div className="storefront-header-spacer" aria-hidden="true" />
+      <header ref={headerRef} className="storefront-header" dir="rtl">
+        <div className="home-header home-container">
+          {announcement && (
+            <div className="home-announcement">
+              <picture>
+                <source media="(min-width: 1024px)" srcSet={assets[1]} />
+                <img
+                  src={assets[3]}
+                  alt="امکان سفارش‌گذاری در کنسرسیوم فعال شد."
+                />
+              </picture>
               <button
-                onClick={() => navigate("/discounts")}
-                className="text-sm font-bold text-white px-4 py-2 rounded-lg whitespace-nowrap transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "#370080", ...F }}
+                type="button"
+                aria-label="بستن اطلاعیه"
+                onClick={() => setAnnouncement(false)}
               >
-                تخفیفات
+                <X size={22} />
               </button>
+            </div>
+          )}
+          <div className="home-header-row">
+            <Link to="/" aria-label="صفحه اصلی کنسرسیوم" className="home-logo">
+              <img src={assets[0]} alt="کنسرسیوم کاغذدیواری" />
+            </Link>
+            <nav className="home-desktop-navigation" aria-label="منوی اصلی">
+              <button type="button" onClick={() => goTo("home-brands")}>
+                برند
+              </button>
+              <Link to="/products">خرید محصولات</Link>
+              <button type="button">
+                درباره‌ما
+              </button>
+              <button type="button">
+                تماس باما
+              </button>
+              <Link to="/discounts">تخفیفات</Link>
             </nav>
-          </div>
-
-          {/* Left: auth + user icon + cart */}
-          <div className="flex items-center gap-3 text-gray-600 shrink-0">
-
-            {/* Auth area */}
-            {user ? (
-              <button
-                onClick={() => navigate("/profile")}
-                className="flex items-center gap-1 text-sm text-gray-800 font-medium hover:text-[#370080] transition-colors"
-                style={F}
+            <div className="home-desktop-search">{search}</div>
+            <Link
+              className="home-login"
+              to={user ? "/profile" : "/login"}
+              onClick={(event) => {
+                if (window.innerWidth < 1024 && user) {
+                  event.preventDefault()
+                  setMobileMenuOpen(true)
+                }
+              }}
+            >
+              <img
+                src={notificationIcon}
+                alt=""
+                className="home-mobile-login-icon"
+                width={30}
+                height={30}
+              />
+              {user ? "کاربر سایت" : "ورود"}
+            </Link>
+            <div className="home-header-actions">
+              <Link
+                to="/profile/pricing-details"
+                aria-label="سفارش سریع"
+                className="home-quick-order"
               >
-                کاربر سایت
-              </button>
-            ) : (
-              <Link to="/login" className="text-sm text-gray-700 font-medium hover:text-[#3d1a6e]" style={F}>
-                ورود
+                <img src={assets[4]} alt="" width={30} height={30} />
               </Link>
-            )}
-
-            {/* User icon */}
-            <button className="hover:text-[#3d1a6e] transition-colors">
-              <User size={22} />
-            </button>
-
-            {/* Cart icon + mini-dropdown */}
-            <div className="relative" ref={cartRef}>
-              <button
-                onClick={() => setCartOpen(o => !o)}
-                className="hover:text-[#3d1a6e] transition-colors relative"
+              <Popover
+                open={cartOpen}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setCartItems(getCart())
+                    setCartCount(getCartCount())
+                  }
+                  setCartOpen(open)
+                }}
               >
-                <ShoppingCart size={22} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -left-1 bg-[#3d1a6e] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {cartCount.toLocaleString("fa-IR")}
-                  </span>
-                )}
-              </button>
-
-              {/* Mini cart dropdown */}
-              {cartOpen && (
-                <div
-                  className="absolute left-0 top-full mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
-                  style={{ direction: "rtl", ...F }}
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="home-cart"
+                    aria-label={`سبد خرید؛ ${cartCount.toLocaleString("fa-IR")} کالا`}
+                  >
+                    <img src={assets[5]} alt="" width={30} height={30} />
+                    <span>{cartCount.toLocaleString("fa-IR")}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="header-cart-menu"
+                  dir="rtl"
+                  align="end"
+                  sideOffset={12}
+                  collisionPadding={12}
+                  aria-label="خلاصه سبد خرید"
                 >
-                  {/* Header row */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    {/* right: count */}
-                    <span className="text-sm font-bold text-gray-800">{fmt(cartItems.length)} کالا</span>
-                    {/* left: view cart */}
-                    <button
-                      onClick={() => { setCartOpen(false); navigate("/cart"); }}
-                      className="flex items-center gap-1 text-sm font-semibold hover:text-[#00695c] transition-colors text-[#4141d9]"
-                      style={F}
-                    >
-                      مشاهده سبد خرید
-                      <ChevronLeft size={15} />
-                    </button>
+                  <div className="header-cart-heading">
+                    <span>{cartItems.length.toLocaleString("fa-IR")} کالا</span>
+                    <Link to="/cart" onClick={() => setCartOpen(false)}>
+                      مشاهده سبد خرید <ChevronLeft size={16} />
+                    </Link>
                   </div>
-
-                  {/* Items */}
-                  <div className="divide-y divide-gray-50">
-                    {cartItems.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-6" style={F}>سبد خرید خالی است</p>
-                    ) : cartItems.map(item => (
-                      <div key={item.code} className="flex items-center gap-3 px-4 py-3">
-                        <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                          <ImageWithFallback
-                            src={(item as any).img || roll2}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 text-right min-w-0" style={F}>
-                          <p className="text-sm font-bold text-gray-800 leading-snug truncate">{item.name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">کد: {item.code}</p>
-                          <p className="text-xs text-gray-400">{fmt(item.qty)} عدد</p>
-                        </div>
-                        <div className="text-left shrink-0" style={F}>
-                          <p className="text-sm font-bold text-[#000000]">{fmt(item.unitPrice * item.qty)}</p>
-                          <p className="text-[10px] text-gray-400">تومان</p>
-                        </div>
+                  {cartItems.length ? (
+                    <>
+                      <div className="header-cart-items">
+                        {cartItems.map((item) => (
+                          <Link
+                            to={`/product/${encodeURIComponent(item.code)}`}
+                            key={item.id}
+                            className="header-cart-item"
+                            onClick={() => setCartOpen(false)}
+                          >
+                            <ImageWithFallback
+                              src={item.img || assets[124]}
+                              alt={item.name}
+                            />
+                            <div className="header-cart-item-details">
+                              <p title={item.name}>{item.name}</p>
+                              <span dir="ltr">{item.code}</span>
+                              <span>
+                                {item.qty.toLocaleString("fa-IR")} عدد
+                              </span>
+                              <span className="header-cart-item-price">
+                                {(item.unitPrice * item.qty).toLocaleString(
+                                  "fa-IR",
+                                )}{" "}
+                                تومان
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-                    {/* label — right */}
-                    <span className="text-sm text-gray-600 font-medium" style={F}>مبلغ قابل پرداخت:</span>
-                    {/* price button — left */}
-                    <button
-                      onClick={() => { setCartOpen(false); navigate("/cart"); }}
-                      className="text-white text-sm font-black px-4 py-2 transition-colors"
-                      style={{ ...F, backgroundColor: "#370080", borderRadius: 15 }}
-                    >
-                      {fmt(cartItems.reduce((s, i) => s + i.unitPrice * i.qty, 0))} تومان
-                    </button>
-                  </div>
-                </div>
-              )}
+                      <div className="header-cart-total">
+                        <span>مبلغ قابل پرداخت:</span>
+                        <Link to="/cart" onClick={() => setCartOpen(false)}>
+                          {cartItems
+                            .reduce(
+                              (total, item) =>
+                                total + item.unitPrice * item.qty,
+                              0,
+                            )
+                            .toLocaleString("fa-IR")}{" "}
+                          تومان
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="header-cart-empty">سبد خرید شما خالی است.</p>
+                  )}
+                </PopoverContent>
+              </Popover>
+              <Link
+                to={user ? "/profile" : "/login"}
+                aria-label="اعلانات حساب کاربری"
+                className="home-account"
+              >
+                <img src={notificationIcon} alt="" width={30} height={30} />
+              </Link>
             </div>
-
-            <button className="lg:hidden text-gray-600 hover:text-[#3d1a6e]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
           </div>
+          <div className="home-mobile-search">{search}</div>
+        </div>
+      </header>
+      <MobileNavigation
+        open={mobileMenuOpen}
+        onOpenChange={setMobileMenuOpen}
+        user={user}
+      />
 
-        </div>
-      </div>
-      <div className="h-px bg-gray-100" />
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-3">
-          {navLinks.map(l => l === "خرید محصولات" ? <Link key={l} to="/products" onClick={() => setMobileMenuOpen(false)} className="flex w-full text-sm text-gray-700 py-3 border-b border-gray-50 last:border-0" style={F}>{l}</Link> : <button key={l} className="flex w-full text-sm text-gray-700 py-3 border-b border-gray-50 last:border-0" style={F}>{l}</button>)}
-        </div>
-      )}
-    </header>
-  );
+    </>
+  )
 }

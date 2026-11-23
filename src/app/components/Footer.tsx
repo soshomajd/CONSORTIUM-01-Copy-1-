@@ -2,6 +2,7 @@ import logoImg from "@/imports/LOGO01.png"
 import { Link } from "react-router"
 import { ArrowLeft, Package, ShieldCheck } from "lucide-react"
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
+import { homeAssets } from "@/app/components/home/assets"
 
 const F = { fontFamily: "'Vazirmatn', sans-serif" }
 
@@ -37,17 +38,19 @@ const customerLinks = [
 const quickLinks = ["محصولات", "برندها", "درباره ما", "تماس با ما"]
 const socialOrder = ["Instagram", "Telegram", "Pinterest", "YouTube"]
 
-export function Footer() {
+export function Footer({ home = false }: { home?: boolean }) {
   return (
     <footer
       dir="rtl"
-      className="mx-auto mt-6 mb-24 w-[calc(100%-2rem)] max-w-[1380px] sm:mb-6 sm:w-[calc(100%-3rem)]"
-      style={F}
+      className={`storefront-footer mx-auto mt-6 mb-24 w-[calc(100%-2rem)] max-w-[1380px] sm:mb-6 sm:w-[calc(100%-3rem)] ${
+        home ? "reference-home-footer" : ""
+      }`}
+      style={home ? { fontFamily: "HomeIRANSans, Vazirmatn, sans-serif" } : F}
     >
-      <div className="grid gap-8 rounded-[26px] bg-[#1A1A1A] px-6 py-8 text-white sm:grid-cols-2 sm:px-[34px] xl:min-h-[310px] xl:grid-cols-[1.1fr_.65fr_.65fr_1.15fr]">
-        <div className="flex min-w-0 flex-col items-start gap-5">
+      <div className="grid gap-8 rounded-[26px] bg-[#2D1E3E] px-6 py-8 text-white sm:grid-cols-2 sm:px-[34px] xl:min-h-[310px] xl:grid-cols-[1.1fr_.65fr_.65fr_1.15fr]">
+        <div className="footer-company flex min-w-0 flex-col items-start gap-5">
           <ImageWithFallback
-            src={logoImg}
+            src={home ? homeAssets[0] : logoImg}
             alt="کنسرسیوم کاغذدیواری"
             className="h-10 w-[140px] object-contain brightness-0 invert"
           />
@@ -60,7 +63,7 @@ export function Footer() {
             رسمی ثبت کنید.
           </p>
         </div>
-        <div className="pt-3">
+        <div className="footer-links pt-3">
           <h2 className="mb-5 text-sm font-semibold text-[#CA165C]">
             خدمات مشتریان
           </h2>
@@ -76,7 +79,7 @@ export function Footer() {
             ))}
           </ul>
         </div>
-        <div className="pt-3">
+        <div className="footer-links pt-3">
           <h2 className="mb-5 text-sm font-semibold text-[#CA165C]">
             دسترسی سریع
           </h2>
@@ -101,79 +104,118 @@ export function Footer() {
             ))}
           </ul>
         </div>
-        <div className="flex min-w-0 flex-col items-center justify-end gap-7 xl:items-end">
+        <div className="footer-socials flex min-w-0 flex-col items-center justify-end gap-7 xl:items-end">
           <div
             aria-label="محل نمایش نماد اعتماد الکترونیکی"
-            className="flex size-[94px] shrink-0 flex-col items-center justify-center rounded-[24px] bg-white text-center text-[#315C9C] xl:mr-auto xl:ml-[14px]"
+            className="footer-trust flex size-[94px] shrink-0 flex-col items-center justify-center rounded-[24px] bg-white text-center text-[#315C9C] xl:mr-auto xl:ml-[14px]"
           >
-            <span
-              aria-hidden="true"
-              className="h-11 font-serif text-[60px] leading-[.7] italic"
-            >
-              ℯ
-            </span>
-            <span className="mt-1 text-[9px] font-black tracking-tight text-gray-700">
-              eNAMAD.ir
-            </span>
-            <span
-              aria-hidden="true"
-              className="text-[10px] tracking-[-1px] text-amber-500"
-            >
-              ★★★★★
-            </span>
-            <span className="text-[5px] text-gray-500">
-              نماد اعتماد الکترونیکی
-            </span>
+            {home ? (
+              <img
+                src={homeAssets[134]}
+                alt="نماد اعتماد الکترونیکی"
+                className="w-16 object-contain"
+              />
+            ) : (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="h-11 font-serif text-[60px] leading-[.7] italic"
+                >
+                  ℯ
+                </span>
+                <span className="mt-1 text-[9px] font-black tracking-tight text-gray-700">
+                  eNAMAD.ir
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="text-[10px] tracking-[-1px] text-amber-500"
+                >
+                  ★★★★★
+                </span>
+                <span className="text-[5px] text-gray-500">
+                  نماد اعتماد الکترونیکی
+                </span>
+              </>
+            )}
           </div>
           <div
             dir="ltr"
-            className="flex max-w-full flex-wrap justify-center gap-2 xl:flex-nowrap"
+            className="footer-social-links flex max-w-full flex-wrap justify-center gap-2 xl:flex-nowrap"
           >
-            {socialOrder.map((label) => {
-              const social = socials.find((item) => item.label === label)!
-              return (
+            {home ? (
+              [15, 16, 14, 17, 18, 19, 20].map((index, order) => (
                 <button
-                  key={label}
+                  key={index}
                   type="button"
-                  aria-label={label}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  aria-label={
+                    [
+                      "اینستاگرام",
+                      "تلگرام",
+                      "پینترست",
+                      "یوتیوب",
+                      "آپارات",
+                      "روبیکا",
+                      "بله",
+                    ][order]
+                  }
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
                 >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="size-6 fill-current"
-                  >
-                    <path d={social.path} />
-                  </svg>
+                  <img
+                    src={`/images/home-reference/footer-social-${index}.svg`}
+                    alt=""
+                    className="size-6"
+                  />
                 </button>
-              )
-            })}
-            <button
-              type="button"
-              aria-label="آپارات"
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <span
-                aria-hidden="true"
-                className="flex size-6 items-center justify-center rounded-full border-2 border-white text-base leading-none"
-              >
-                ✿
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-label="روبیکا"
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <Package size={24} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              aria-label="ایتا"
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <ShieldCheck size={24} aria-hidden="true" />
-            </button>
+              ))
+            ) : (
+              <>
+                {socialOrder.map((label) => {
+                  const social = socials.find((item) => item.label === label)!
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-label={label}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-6 fill-current"
+                      >
+                        <path d={social.path} />
+                      </svg>
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  aria-label="آپارات"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 items-center justify-center rounded-full border-2 border-white text-base leading-none"
+                  >
+                    ✿
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="روبیکا"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  <Package size={24} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="ایتا"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  <ShieldCheck size={24} aria-hidden="true" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
