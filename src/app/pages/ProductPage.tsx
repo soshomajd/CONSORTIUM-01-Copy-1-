@@ -1,5 +1,5 @@
 import { toPersianDigits } from "@/app/lib/persian-digits";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { addToCart } from "@/app/store/cart";
 import { Heart, Share2, Bookmark, Bell, Truck, ShieldCheck, Headphones, RotateCcw, MessageSquare, CheckCircle, ShoppingCart, Clock3, Star, ChevronDown } from "lucide-react";
@@ -14,6 +14,7 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ProductReviews } from "@/app/components/ProductReviews";
 import { ProductOfferBenefits } from "@/app/components/ProductOfferBenefits";
 import { ProductCartControl } from "@/app/components/ProductCartControl";
+import { ProductUpsellDialog } from "@/app/components/ProductUpsellDialog";
 import { SimilarProducts } from "@/app/components/SimilarProducts";
 import productFavoriteIcon from "@/assets/icons/product-favorite-black.svg";
 import productShareIcon from "@/assets/icons/product-share-black.svg";
@@ -82,12 +83,18 @@ export function ProductPage() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState(0);
   const [added, setAdded] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const purchaseCardRef = useRef<HTMLDivElement>(null);
 
   const [qty, setQty] = useState(1);
   const p = name ? collections[name] : null;
   const [newReviewRatings, setNewReviewRatings] = useState<number[]>([]);
-  useEffect(() => { setNewReviewRatings([]); }, [name]);
+  useEffect(() => { setNewReviewRatings([]); setUpsellOpen(false); }, [name]);
   const newReviewAverage = newReviewRatings.length ? newReviewRatings.reduce((total, rating) => total + rating, 0) / newReviewRatings.length : 0;
+  const relatedProducts = ["6134", "6133", "6132", "6131", "6129"].map(code => {
+    const product = collections[code];
+    return { id: code, code, name: `تکسچر ${toPersianDigits(code)}`, album: product.album, unitPrice: product.price, originalPrice: product.originalPrice, img: product.imgs[0] };
+  });
 
   function handleAddToCart() {
     if (!p || !name) return;
@@ -336,6 +343,7 @@ export function ProductPage() {
 
               {/* Purchase card */}
               <div
+              ref={purchaseCardRef}
               data-product-purchase-card
               className={`w-full border border-gray-200 p-5 bg-white ${
                 usesDetailedProductLayout(p.code)
@@ -405,7 +413,7 @@ export function ProductPage() {
                 )}
 
                 {/* Add to cart button */}
-                {usesDetailedProductLayout(p.code) && !p.outOfStock ? <ProductCartControl item={{ id: p.code, name: p.name ?? name ?? p.code, code: p.code, unitPrice: p.price, img: p.imgs[0] }} /> : <button
+                {usesDetailedProductLayout(p.code) && !p.outOfStock ? <ProductCartControl onAdded={p.code === "6135" ? () => setUpsellOpen(true) : undefined} item={{ id: p.code, name: p.name ?? name ?? p.code, code: p.code, unitPrice: p.price, img: p.imgs[0] }} /> : <button
                   disabled={p.outOfStock || added}
                   onClick={handleAddToCart}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200"
@@ -435,6 +443,7 @@ export function ProductPage() {
           <ProductMeta key={p.code} name={name ?? ""} code={p.code} album={p.album} color={p.color} onReviewAdded={p.code === "6130" ? rating => setNewReviewRatings(previous => [...previous, rating]) : undefined} />
         </div>
       )}
+      {p?.code === "6135" && <ProductUpsellDialog open={upsellOpen} onOpenChange={setUpsellOpen} products={relatedProducts} onAfterClose={() => purchaseCardRef.current?.querySelector<HTMLButtonElement>("button")?.focus()} />}
     </div>
   );
 }
