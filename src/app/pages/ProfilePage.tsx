@@ -758,7 +758,7 @@ function QuickOrderSection() {
                           className="flex size-7 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[#6A7282] transition-colors hover:border-[#370080] hover:bg-[#370080] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-white disabled:hover:text-[#6A7282] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#370080] sm:size-8"><Minus size={14} strokeWidth={1.5} aria-hidden="true" /></button>
                       </div>
                     </td>
-                    <td className={`px-0.5 py-2.5 text-xs font-light leading-5 sm:px-2 sm:py-3.5 sm:text-sm ${p.inStock ? "text-[#370080]" : "text-[#CA165C]"}`}>{p.inStock ? "دارد" : "ندارد"}</td>
+                    <td className={`px-0.5 py-2.5 text-xs font-medium leading-5 sm:px-2 sm:py-3.5 sm:text-sm ${p.inStock ? "text-[#370080]" : "text-[#CA165C]"}`}>{p.inStock ? "دارد" : "ندارد"}</td>
                     <td className="hidden whitespace-nowrap px-1 py-2.5 text-xs font-light tabular-nums leading-5 text-[#6A7282] sm:table-cell sm:px-2 sm:py-3.5 sm:text-sm">{p.price ? fmt(p.price) : "−"}</td>
                   </tr>
                 ))}
@@ -1161,11 +1161,21 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
                                   </div>
                                 ))}
                               </div>
-                              <div className="px-3 sm:px-6">
-                                <p className="mb-2 mt-4 text-sm font-light leading-6 text-[#6A7282]">رسید باربری</p>
+                              <div className="mt-4 grid max-w-[560px] grid-cols-2 items-start gap-4 px-3 sm:px-6">
+                                <div className="min-w-0">
+                                <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">رسید باربری</p>
                                 <div data-return-receipt className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
                                   <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
                                     <ImageWithFallback src={roll2} alt="رسید باربری" className="h-full w-full object-cover" />
+                                  </div>
+                                </div>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">تصویر کالای مرجوعی</p>
+                                  <div data-return-product-image className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
+                                    <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
+                                      <ImageWithFallback src={trendImg1} alt="تصویر کالای مرجوعی" className="h-full w-full object-cover" />
+                                    </div>
                                   </div>
                                 </div>
                               </div>

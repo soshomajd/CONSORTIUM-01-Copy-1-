@@ -550,6 +550,7 @@ export function ProductCatalogPage({
                     productHref={!discounted && item.code === "WP-A101" ? "/product/6130" : undefined}
                     showReviews={discounted || item.code !== "WP-A101"}
                     amazingTypography
+                    compactOffers
                     hasIncentive={discounted || item.code === "WP-C317"}
                     fastDelivery={!discounted && item.code === "WP-D412"}
                     fluid

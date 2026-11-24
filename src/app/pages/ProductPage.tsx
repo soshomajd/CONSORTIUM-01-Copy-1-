@@ -1,5 +1,5 @@
 import { toPersianDigits } from "@/app/lib/persian-digits";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { addToCart } from "@/app/store/cart";
 import { Heart, Share2, Bookmark, Bell, Truck, ShieldCheck, Headphones, RotateCcw, MessageSquare, CheckCircle, ShoppingCart, Clock3, Star, ChevronDown } from "lucide-react";
@@ -14,6 +14,7 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ProductReviews } from "@/app/components/ProductReviews";
 import { ProductOfferBenefits } from "@/app/components/ProductOfferBenefits";
 import { ProductCartControl } from "@/app/components/ProductCartControl";
+import { ProductUpsellDialog } from "@/app/components/ProductUpsellDialog";
 import { SimilarProducts } from "@/app/components/SimilarProducts";
 import productFavoriteIcon from "@/assets/icons/product-favorite-black.svg";
 import productShareIcon from "@/assets/icons/product-share-black.svg";
@@ -82,12 +83,18 @@ export function ProductPage() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState(0);
   const [added, setAdded] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const purchaseCardRef = useRef<HTMLDivElement>(null);
 
   const [qty, setQty] = useState(1);
   const p = name ? collections[name] : null;
   const [newReviewRatings, setNewReviewRatings] = useState<number[]>([]);
-  useEffect(() => { setNewReviewRatings([]); }, [name]);
+  useEffect(() => { setNewReviewRatings([]); setUpsellOpen(false); }, [name]);
   const newReviewAverage = newReviewRatings.length ? newReviewRatings.reduce((total, rating) => total + rating, 0) / newReviewRatings.length : 0;
+  const relatedProducts = ["6134", "6133", "6132", "6131", "6129"].map(code => {
+    const product = collections[code];
+    return { id: code, code, name: `تکسچر ${toPersianDigits(code)}`, album: product.album, unitPrice: product.price, originalPrice: product.originalPrice, img: product.imgs[0] };
+  });
 
   function handleAddToCart() {
     if (!p || !name) return;
@@ -152,7 +159,7 @@ export function ProductPage() {
                 </div>
               )}
 
-              <div className="flex w-full items-start gap-3">
+              <div className="flex w-full min-w-0 items-start gap-3" data-product-gallery>
 
                 {/* Thumbnail strip — right side of image area, scrollable */}
                 <div
@@ -179,19 +186,20 @@ export function ProductPage() {
                 </div>
 
                 {/* Main large image */}
-                <div className={`w-full min-w-0 xl:w-[450px] xl:shrink-0 ${usesDetailedProductLayout(p.code) ? "mx-auto max-w-[450px] xl:mx-0" : ""}`}>
+                <div className={`w-full min-w-0 xl:w-[450px] xl:shrink-0 ${usesDetailedProductLayout(p.code) ? "mx-auto max-w-[450px] sm:max-w-[592px] xl:mx-0 xl:max-w-[450px]" : ""}`}>
                   <div className={`${usesDetailedProductLayout(p.code) ? "relative aspect-[45/56] rounded-[28px]" : "h-[420px] sm:h-[500px] xl:h-[560px] rounded-2xl"} overflow-hidden group cursor-zoom-in bg-gray-100`}>
                     <ImageWithFallback
                       src={p.imgs[selected]}
-                      alt={name ?? ""}
-                      className={`w-full h-full object-cover transition-transform duration-500 motion-reduce:transition-none motion-safe:group-hover:scale-110 ${usesDetailedProductLayout(p.code) ? "absolute inset-0" : ""}`}
+                      alt={`${p.name ?? name ?? p.code} — تصویر ${(selected + 1).toLocaleString("fa-IR")}`}
+                      decoding="async"
+                      className={`w-full h-full transition-transform duration-500 motion-reduce:transition-none ${usesDetailedProductLayout(p.code) ? "absolute inset-0 object-contain xl:object-cover xl:motion-safe:group-hover:scale-110" : "object-cover motion-safe:group-hover:scale-110"}`}
                     />
                   </div>
                   {/* Mobile thumbnails */}
-                  <div className="xl:hidden flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-2 mt-3 [scrollbar-width:thin]">
+                  <div className="xl:hidden flex w-full min-w-0 snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-2 mt-3 [scrollbar-width:thin]">
                     {(usesDetailedProductLayout(p.code) ? p.imgs : p.imgs.slice(0, 5)).map((img, i) => (
-                      <button key={i} type="button" aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`} aria-pressed={selected === i} className="snap-start focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080]" onClick={() => setSelected(i)} style={{ width: 72, height: usesDetailedProductLayout(p.code) ? undefined : 84, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
-                        <ImageWithFallback src={img} alt="" className="w-full h-full object-cover" />
+                      <button key={i} type="button" aria-label={`نمایش تصویر ${(i + 1).toLocaleString("fa-IR")}`} aria-pressed={selected === i} className={`snap-start focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#370080] ${usesDetailedProductLayout(p.code) ? "w-[clamp(56px,18vw,72px)] bg-gray-50 sm:w-20" : ""}`} onClick={() => setSelected(i)} style={{ width: usesDetailedProductLayout(p.code) ? undefined : 72, height: usesDetailedProductLayout(p.code) ? undefined : 84, aspectRatio: usesDetailedProductLayout(p.code) ? "26 / 31" : undefined, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: selected === i ? "2px solid #370080" : "2px solid #e5e7eb" }}>
+                        <ImageWithFallback src={img} alt="" loading="lazy" decoding="async" className={`w-full h-full ${usesDetailedProductLayout(p.code) ? "object-contain" : "object-cover"}`} />
                       </button>
                     ))}
                   </div>
@@ -323,7 +331,7 @@ export function ProductPage() {
                   </div>
                 ))}
                 {/* Status row */}
-                {usesDetailedProductLayout(p.code) && <div className="mt-2 self-end text-left sm:self-auto sm:text-right xl:pt-2 xl:pr-2"><ProductOfferBenefits compactMobile /></div>}
+                {usesDetailedProductLayout(p.code) && <div className="mt-[50px] self-end text-left sm:self-auto sm:text-right xl:pt-2 xl:pr-2"><ProductOfferBenefits compactMobile /></div>}
                 {!usesDetailedProductLayout(p.code) && (
                   <div dir="rtl" className="flex items-center justify-end gap-2 text-sm">
                     <span style={{ color: p.outOfStock ? "#CA165C" : "#16a34a", fontWeight: 600 }}>
@@ -336,6 +344,7 @@ export function ProductPage() {
 
               {/* Purchase card */}
               <div
+              ref={purchaseCardRef}
               data-product-purchase-card
               className={`w-full border border-gray-200 p-5 bg-white ${
                 usesDetailedProductLayout(p.code)
@@ -405,7 +414,7 @@ export function ProductPage() {
                 )}
 
                 {/* Add to cart button */}
-                {usesDetailedProductLayout(p.code) && !p.outOfStock ? <ProductCartControl item={{ id: p.code, name: p.name ?? name ?? p.code, code: p.code, unitPrice: p.price, img: p.imgs[0] }} /> : <button
+                {usesDetailedProductLayout(p.code) && !p.outOfStock ? <ProductCartControl onAdded={p.code === "6135" ? () => setUpsellOpen(true) : undefined} item={{ id: p.code, name: p.name ?? name ?? p.code, code: p.code, unitPrice: p.price, img: p.imgs[0] }} /> : <button
                   disabled={p.outOfStock || added}
                   onClick={handleAddToCart}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200"
@@ -435,6 +444,7 @@ export function ProductPage() {
           <ProductMeta key={p.code} name={name ?? ""} code={p.code} album={p.album} color={p.color} onReviewAdded={p.code === "6130" ? rating => setNewReviewRatings(previous => [...previous, rating]) : undefined} />
         </div>
       )}
+      {p?.code === "6135" && <ProductUpsellDialog addedProduct={{ img: p.imgs[0], name: p.name ?? p.code }} open={upsellOpen} onOpenChange={setUpsellOpen} products={relatedProducts} onAfterClose={() => purchaseCardRef.current?.querySelector<HTMLButtonElement>("button")?.focus()} />}
     </div>
   );
 }

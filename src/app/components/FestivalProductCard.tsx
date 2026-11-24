@@ -43,6 +43,7 @@ export function FestivalProductCard({
   title = "تکسچر(1) 202011",
   productHref = "/product/6135",
   showReviews = true,
+  compactOffers = false,
 }: {
   item: {
     code: string
@@ -59,8 +60,15 @@ export function FestivalProductCard({
   title?: string
   productHref?: string
   showReviews?: boolean
+  compactOffers?: boolean
 }) {
   const afterPrice = Math.round(item.basePrice * (1 - item.discount / 100))
+  const offerTypography = {
+    ...F,
+    fontSize: compactOffers ? 11 : amazingTypography ? 13 : 11,
+    fontWeight: compactOffers ? 500 : amazingTypography ? 400 : 700,
+    lineHeight: compactOffers ? "16px" : undefined,
+  }
 
   return (
     <Link
@@ -154,7 +162,7 @@ export function FestivalProductCard({
 
       <div
         style={{
-          padding: "12px 12px 14px",
+          padding: compactOffers && !hasIncentive && !fastDelivery ? "12px 12px 20px" : "12px 12px 14px",
           display: "flex",
           flexDirection: "column",
           gap: 8,
@@ -222,7 +230,7 @@ export function FestivalProductCard({
         </div>
 
         {hasIncentive && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: compactOffers ? 1 : 3 }}>
             <span
               style={{
                 display: "flex",
@@ -234,10 +242,8 @@ export function FestivalProductCard({
               <Package size={11} strokeWidth={2} />
               <span
                 style={{
-                  fontSize: amazingTypography ? 13 : 11,
-                  fontWeight: amazingTypography ? 400 : 700,
                   color: "#CA165C",
-                  ...F,
+                  ...offerTypography,
                 }}
               >
                 تنها ۲۰ رول باقی مانده
@@ -248,10 +254,8 @@ export function FestivalProductCard({
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
-                fontSize: amazingTypography ? 13 : 11,
-                fontWeight: amazingTypography ? 400 : 700,
                 color: "#CA165C",
-                ...F,
+                ...offerTypography,
               }}
             >
               <PickupTruckIcon size={12} />
@@ -261,7 +265,7 @@ export function FestivalProductCard({
         )}
 
         {fastDelivery && (
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: amazingTypography ? 13 : 11, fontWeight: amazingTypography ? 400 : 700, color: PINK, ...F }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 4, color: PINK, ...offerTypography }}>
             <PickupTruckIcon size={12} />
             <span>ارسال سریع به سراسر ایران</span>
           </span>
