@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useEffect } from "react";
+import { Fragment, useState, useRef, useEffect, useId } from "react";
 import type * as React from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
@@ -12,6 +12,9 @@ import { addToCart } from "@/app/lib/cart";
 import { getPaginationItems } from "@/app/lib/pagination";
 import { clearUser, getUser, openMobileProfileMenu } from "@/app/components/Header";
 import { Button } from "@/app/components/ui/button";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/app/components/ui/tooltip";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import roll2 from "@/imports/17169a56-f3d0-48d5-aeb6-4e0ab3dc9043.png";
 import albumComingSoon from "@/imports/Album-Coming_Soon-V01.png";
@@ -52,6 +55,7 @@ type Order = {
   id: string; siteCode: string; deliveryCode: string; amount: number; items: number;
   date: string; delivery: string; status: "paid" | "confirmed" | "cancelled" | "delivered";
   tab: "current" | "review" | "delivered" | "returned" | "cancelled";
+  returnExpired?: boolean;
 };
 
 const mockOrders: Order[] = [
@@ -60,8 +64,8 @@ const mockOrders: Order[] = [
   { id: "141405012", siteCode: "100105", deliveryCode: "DL-۷۶۹۰",  amount: 3200000, items: 3, date: "۱۴۰۵/۴/۱۵", delivery: "سه شنبه ۱۶ تیر ۱۴۰۵",      status: "confirmed", tab: "review"    },
   { id: "141404990", siteCode: "100098", deliveryCode: "DL-۷۵۳۳",  amount: 1750000, items: 1, date: "۱۴۰۵/۳/۲۸", delivery: "شنبه ۳۰ خرداد ۱۴۰۵",        status: "confirmed", tab: "review"    },
   { id: "141403210", siteCode: "100044", deliveryCode: "—",         amount: 860000,  items: 1, date: "۱۴۰۵/۲/۱۰", delivery: "یک شنبه ۱۱ اردیبهشت ۱۴۰۵", status: "cancelled", tab: "cancelled" },
-  { id: "141402875", siteCode: "100031", deliveryCode: "DL-۶۱۰۸",  amount: 2450000, items: 2, date: "۱۴۰۵/۱/۲۵", delivery: "سه شنبه ۲۶ فروردین ۱۴۰۵",  status: "delivered", tab: "delivered" },
-  { id: "141401540", siteCode: "100018", deliveryCode: "DL-۵۸۷۷",  amount: 1180000, items: 1, date: "۱۴۰۴/۱۲/۱۵", delivery: "شنبه ۱۶ اسفند ۱۴۰۴",      status: "delivered", tab: "delivered" },
+  { id: "141402875", siteCode: "100031", deliveryCode: "DL-۶۱۰۸",  amount: 2450000, items: 5, date: "۱۴۰۵/۱/۲۵", delivery: "سه شنبه ۲۶ فروردین ۱۴۰۵",  status: "delivered", tab: "delivered" },
+  { id: "141401540", siteCode: "100018", deliveryCode: "DL-۵۸۷۷",  amount: 1180000, items: 1, date: "۱۴۰۴/۱۲/۱۵", delivery: "شنبه ۱۶ اسفند ۱۴۰۴",      status: "delivered", tab: "delivered", returnExpired: true },
 ];
 
 const orderTabs = [
@@ -73,6 +77,10 @@ const orderTabs = [
 ];
 
 function fmt(n: number) { return n.toLocaleString("fa-IR"); }
+
+function getOrderItemUid(order: Order, index: number) {
+  return `${order.id}${String(index + 1).padStart(7, "0")}`;
+}
 
 function ProfileSectionHeading({ children, className = "mb-5" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -249,13 +257,232 @@ function SurveyPanel({ orderId, onClose }: { orderId: string; onClose: () => voi
   );
 }
 
-function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
+function OrderReturnPanel({ order, onSubmit, onClose }: { order: Order; onSubmit: (req: ReturnRequest) => void; onClose: () => void }) {
+  const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set());
+  const [shippingMethod, setShippingMethod] = useState("");
+  const [shippingMethodOpen, setShippingMethodOpen] = useState(false);
+  const [shippingError, setShippingError] = useState("");
+  const [selectionError, setSelectionError] = useState("");
+  const [reviewResults, setReviewResults] = useState<Record<string, "success" | "rejected">>({});
+  const [latestRequestId, setLatestRequestId] = useState("");
+  const [uploadResetKey, setUploadResetKey] = useState(0);
+  const [hasProductImages, setHasProductImages] = useState(false);
+  const [hasShippingReceipt, setHasShippingReceipt] = useState(false);
+  const [uploadValidationShown, setUploadValidationShown] = useState(false);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const submitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shippingDropRef = useRef<HTMLDivElement>(null);
+  const products = getOrderReturnItems(order);
+
+  useEffect(() => {
+    const closeDropdown = (event: MouseEvent) => {
+      if (shippingDropRef.current && !shippingDropRef.current.contains(event.target as Node)) {
+        setShippingMethodOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", closeDropdown);
+    return () => document.removeEventListener("mousedown", closeDropdown);
+  }, []);
+
+  useEffect(() => () => {
+    if (submitTimer.current !== null) clearTimeout(submitTimer.current);
+  }, []);
+
+  const toggleProduct = (uid: string, checked: boolean) => {
+    if (isSubmitting || reviewResults[uid]) return;
+    setSelectedUids(previous => {
+      const next = new Set(previous);
+      if (checked) next.add(uid);
+      else next.delete(uid);
+      return next;
+    });
+    setSelectionError("");
+  };
+
+  const handleSubmit = () => {
+    if (submitTimer.current !== null) return;
+    const hasShippingMethod = Boolean(shippingMethod);
+    const selectedItems = products.filter(item => selectedUids.has(item.product.uid) && !reviewResults[item.product.uid]);
+    const hasSelectedItems = selectedItems.length > 0;
+    setShippingError(hasShippingMethod ? "" : "لطفاً شیوه ارسال را انتخاب کنید.");
+    setSelectionError(hasSelectedItems ? "" : "حداقل یک کالا را برای مرجوعی انتخاب کنید.");
+    setUploadValidationShown(true);
+    if (!hasShippingMethod || !hasSelectedItems || !hasProductImages || !hasShippingReceipt) return;
+
+    setIsSubmitting(true);
+    setShippingMethodOpen(false);
+    submitTimer.current = setTimeout(() => {
+      const { results, acceptedItems } = reviewReturnItems(selectedItems);
+      const requestId = `ret-${Date.now()}`;
+      setReviewResults(previous => ({ ...previous, ...results }));
+      setLatestRequestId(requestId);
+      setUploadResetKey(previous => previous + 1);
+      setHasProductImages(false);
+      setHasShippingReceipt(false);
+      setUploadValidationShown(false);
+      setResultDialogOpen(true);
+      setSelectedUids(new Set());
+      setIsSubmitting(false);
+      submitTimer.current = null;
+      if (acceptedItems.length > 0) {
+        onSubmit({
+          id: requestId,
+          date: new Date().toLocaleDateString("fa-IR"),
+          items: acceptedItems,
+          status: "pending",
+          shippingMethod,
+        });
+      }
+    }, 2000);
+  };
+
+  return (
+    <div className="mx-auto w-full min-w-0 max-w-[800px] rounded-2xl border border-gray-200 bg-white px-6 py-3 sm:px-7 sm:py-5" dir="rtl">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-bold text-[#1E2939]" style={F}>ثبت درخواست مرجوعی</h3>
+        <button type="button" onClick={onClose} aria-label="بستن ثبت مرجوعی" className="flex size-10 shrink-0 items-center justify-center rounded-xl text-[#CA165C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]">
+          <X size={18} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="mb-6 flex w-full flex-col gap-2 sm:ml-auto sm:w-1/3">
+        <label className="text-right text-sm font-semibold text-[#1E2939]" style={F}>انتخاب شیوه ارسال</label>
+        <div className="relative w-full" ref={shippingDropRef}>
+          <button
+            type="button"
+            aria-expanded={shippingMethodOpen}
+            aria-haspopup="listbox"
+            aria-invalid={Boolean(shippingError)}
+            disabled={isSubmitting}
+            onClick={() => setShippingMethodOpen(open => !open)}
+            className={`flex h-11 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 text-right text-sm font-light text-[#6A7282] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#370080] ${shippingError ? "border-[#CA165C]" : "border-gray-300"}`}
+            style={F}
+          >
+            <span>{shippingMethod === "smart-distribution" ? "توزیع هوشمند" : "انتخاب کنید"}</span>
+            <ChevronDown size={14} className={`shrink-0 text-gray-400 transition-transform duration-200 ${shippingMethodOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+          <AnimatePresence>
+            {shippingMethodOpen && (
+              <motion.div
+                role="listbox"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.16 }}
+                className="absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+                style={F}
+              >
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={shippingMethod === "smart-distribution"}
+                  onClick={() => {
+                    setShippingMethod("smart-distribution");
+                    setShippingMethodOpen(false);
+                    setShippingError("");
+                  }}
+                  className="w-full px-3 py-2.5 text-right text-sm font-light text-[#6A7282] hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#370080]"
+                >
+                  توزیع هوشمند
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        {shippingError && <p role="alert" className="text-xs font-medium text-[#CA165C]" style={F}>{shippingError}</p>}
+      </div>
+
+      <div className="w-full min-w-0 overflow-x-auto xl:overflow-x-visible" role="region" aria-label="جدول بررسی اقلام مرجوعی" tabIndex={0}>
+      <div className="flex w-full min-w-[800px] flex-col gap-2 xl:min-w-0">
+        <div className="grid grid-cols-4 rounded-2xl border border-gray-200 bg-white text-sm font-light leading-6 text-[#6A7282]" style={F}>
+          <span className="min-w-0 whitespace-nowrap px-1 py-4 text-right sm:px-2">محصول</span>
+          <span className="min-w-0 whitespace-nowrap px-1 py-4 text-center sm:px-2">UID</span>
+          <span className="min-w-0 whitespace-nowrap px-1 py-4 text-center sm:px-2">مرجوعی</span>
+          <span className="min-w-0 whitespace-nowrap px-1 py-4 text-center sm:px-2">پیغام بررسی</span>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        <table className="w-full table-fixed border-collapse text-right" style={F}>
+          <caption className="sr-only">اقلام قابل انتخاب برای مرجوعی سفارش {order.id}</caption>
+          <colgroup><col className="w-1/4" /><col className="w-1/4" /><col className="w-1/4" /><col className="w-1/4" /></colgroup>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">محصول</th>
+              <th scope="col">UID</th>
+              <th scope="col">مرجوعی</th>
+              <th scope="col">پیغام بررسی</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map(({ product }) => {
+              const uid = product.uid ?? "";
+              const checked = selectedUids.has(uid);
+              const result = reviewResults[uid];
+              return (
+                <tr key={product.id} aria-disabled={Boolean(result)} className="border-t border-gray-200 bg-white first:border-t-0">
+                  <td className="px-1 py-3 align-middle sm:px-2">
+                    <div className={`flex min-w-0 items-center gap-1 ${result ? "opacity-30" : ""}`}>
+                      <div className="size-8 shrink-0 overflow-hidden rounded-lg border border-gray-200">
+                        <ImageWithFallback src={roll2} alt={product.name} className="h-full w-full object-cover" />
+                      </div>
+                      <span className="block whitespace-nowrap text-sm font-medium leading-5 text-[#1E2939] sm:font-semibold">{product.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-1 py-3 text-center align-middle sm:px-2">
+                    <span dir="ltr" className={`block whitespace-nowrap text-center text-sm font-medium tabular-nums text-[#1E2939] ${result ? "opacity-30" : ""}`}>{uid}</span>
+                  </td>
+                  <td className="px-1 py-3 text-center align-middle sm:px-2">
+                    <Checkbox
+                      checked={checked}
+                      disabled={isSubmitting || Boolean(result)}
+                      onCheckedChange={value => toggleProduct(uid, value === true)}
+                      aria-label={`انتخاب ${product.name} برای مرجوعی`}
+                      className="mx-auto size-5 rounded-md border-gray-300 data-[state=checked]:border-[#CA165C] data-[state=checked]:bg-[#CA165C] data-[state=checked]:text-white disabled:opacity-30"
+                    />
+                  </td>
+                  <td className="px-1 py-3 text-center align-middle sm:px-2">
+                    <span role="status" className={`block whitespace-nowrap text-center text-sm leading-6 ${result === "success" ? "font-normal" : "font-medium"} ${result ? `bg-transparent px-1 py-2 sm:px-3 ${result === "success" ? "text-[#370080]" : "text-[#CA165C]"}` : ""}`}>
+                      {result === "success" ? "با موفقیت ثبت شد." : result === "rejected" ? "به دلیل گذشت سی روز از ثبت خرید این رول، امکان مرجوعی وجود ندارد." : ""}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        </div>
+      </div>
+      </div>
+      {selectionError && <p role="alert" className="mt-2 text-xs font-medium text-[#CA165C]" style={F}>{selectionError}</p>}
+
+      <div className="mt-5">
+        <ReturnUploadBoxes resetKey={uploadResetKey} disabled={isSubmitting}
+          onProductsChange={setHasProductImages}
+          onReceiptChange={setHasShippingReceipt}
+          productsError={uploadValidationShown && !hasProductImages ? "لطفا تصویر کالا رو بارگذاری کنید." : ""}
+          receiptError={uploadValidationShown && !hasShippingReceipt ? "لطفا تصویر رسید باربری رو بارگذاری کنید." : ""}
+        />
+      </div>
+
+      <div className="mt-5 flex justify-end">
+        <button ref={submitButtonRef} type="button" onClick={handleSubmit} disabled={isSubmitting} aria-busy={isSubmitting} aria-label={isSubmitting ? "در حال بررسی اقلام مرجوعی" : "ثبت اقلام مرجوعی"} className="inline-flex min-h-11 min-w-40 items-center justify-center rounded-xl bg-[#CA165C] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#D5457D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] disabled:cursor-wait" style={F}>
+          {isSubmitting ? <RefreshCw size={20} className="animate-spin text-white" aria-hidden="true" /> : "ثبت اقلام مرجوعی"}
+        </button>
+      </div>
+      <ReturnSuccessDialog open={resultDialogOpen} onOpenChange={setResultDialogOpen} requestId={latestRequestId} onAfterClose={() => submitButtonRef.current?.focus()} />
+    </div>
+  );
+}
+
+function OrderCard({ order, showPay, onReturnSubmit, highlighted = false }: { order: Order; showPay: boolean; onReturnSubmit: (req: ReturnRequest) => void; highlighted?: boolean }) {
   const [surveyOpen, setSurveyOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const statusMap = { paid: { label: "پرداخت شده", bg: "#f0fdf4", color: "#16a34a" }, confirmed: { label: "تایید شده", bg: "#f0fdf4", color: "#16a34a" }, cancelled: { label: "لغو شده", bg: "#fff1f2", color: "#e11d48" }, delivered: { label: "تحویل شده", bg: "#eff6ff", color: "#2563eb" } };
   const s = statusMap[order.status];
   return (
     <div className="pb-2 sm:pb-3 lg:pb-4">
-      <div className="relative border border-gray-300 rounded-2xl bg-white shadow-sm overflow-hidden">
+      <div className={`relative rounded-2xl border bg-white shadow-sm overflow-hidden ${highlighted ? "border-[#CA165C]" : "border-gray-300"}`}>
         <div className="p-4 sm:p-5" dir="rtl">
           {/* Title row: order code + status badge */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
@@ -335,7 +562,7 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
                             }}>
                             <Icon size={16} strokeWidth={future ? 1.8 : 2.2} color={iconColor} />
                           </div>
-                          <span className="w-full px-0.5 text-center leading-[18px]" style={{ fontSize: 11, fontWeight: 300, color: future ? "#d1d5db" : PURPLE, ...F }}>
+                          <span className="w-full px-0.5 text-center leading-[18px]" style={{ fontSize: 11, fontWeight: 500, color: future ? "#d1d5db" : PURPLE, ...F }}>
                             {label}
                           </span>
                         </div>
@@ -371,9 +598,31 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
             </div>
             {/* Buttons — left */}
             <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:self-auto">
+              {order.status === "delivered" && order.returnExpired && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} aria-label="ثبت مرجوعی غیرفعال است" className="inline-flex cursor-not-allowed rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]">
+                      <button type="button" disabled className="pointer-events-none inline-flex h-8 min-h-8 items-center justify-center rounded-lg border border-[#CA165C] bg-white px-[6px] py-[4.8px] text-xs font-medium text-[#CA165C] opacity-40 sm:h-auto sm:min-h-11 sm:px-[9.6px] sm:py-[6px] sm:text-sm sm:font-bold" style={F}>
+                        ثبت مرجوعی
+                      </button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent dir="rtl" side="top" sideOffset={8} className="max-w-[min(300px,calc(100vw-32px))] rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-sm font-light leading-6 text-[#CA165C] shadow-lg [&_svg]:bg-white [&_svg]:fill-white" style={F}>
+                    به دلیل گذشت سی روز از مهلت ثبت خرید؛ امکان ثبت مرجوعی وجود ندارد.
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {order.status === "delivered" && !order.returnExpired && (
+                <button onClick={() => { setReturnOpen(open => !open); setSurveyOpen(false); }}
+                  aria-expanded={returnOpen}
+                  className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C] sm:h-auto sm:min-h-11 sm:px-[9.6px] sm:py-[6px] sm:text-sm sm:font-bold"
+                  style={{ backgroundColor: "#ffffff", color: "#CA165C", border: "1px solid #CA165C", ...F }}>
+                  {returnOpen ? "بستن مرجوعی" : "ثبت مرجوعی"}
+                </button>
+              )}
               <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm" style={{ backgroundColor: "#ffffff", color: "#370080", border: "1px solid #370080", ...F }}>مشاهده صورتحساب</button>
               {order.status === "delivered" && (
-                <button onClick={() => setSurveyOpen(o => !o)}
+                <button onClick={() => { setSurveyOpen(open => !open); setReturnOpen(false); }}
                   className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm"
                   style={{ backgroundColor: "#370080", color: "#fff", ...F }}>
                   {surveyOpen ? "بستن نظرسنجی" : "نظرسنجی"}
@@ -382,7 +631,7 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
               {showPay && <button className="inline-flex h-8 min-h-8 items-center justify-center rounded-lg px-[6px] py-[4.8px] sm:h-auto sm:min-h-11 text-xs font-medium sm:font-bold text-white transition-colors sm:px-[9.6px] sm:py-[6px] sm:text-sm" style={{ backgroundColor: "#370080", ...F }}>پرداخت</button>}
               {order.tab !== "cancelled" && order.tab !== "delivered" && (
                 <Button
-                  className="h-8 min-h-8 rounded-lg bg-brand-pink px-[6px] py-[4.8px] text-xs font-medium sm:font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:h-auto sm:min-h-0 sm:px-[9.6px] sm:py-[6px] sm:text-sm"
+                  className="h-8 min-h-8 rounded-lg bg-brand-pink px-[6px] py-[4.8px] text-xs font-medium sm:font-bold text-white hover:bg-brand-pink/90 hover:text-white sm:h-auto sm:min-h-11 sm:px-4 sm:py-2.5 sm:text-sm"
                   style={F}
                 >
                   لغو سفارش
@@ -405,18 +654,32 @@ function OrderCard({ order, showPay }: { order: Order; showPay: boolean }) {
           <SurveyPanel orderId={order.id} onClose={() => setSurveyOpen(false)} />
         </div>
       </div>
+      <div hidden={!returnOpen}>
+        <div className="min-w-0 xl:-mx-4" style={{ padding: "16px 0 8px" }}>
+          <OrderReturnPanel order={order} onSubmit={onReturnSubmit} onClose={() => setReturnOpen(false)} />
+        </div>
+      </div>
     </div>
   );
 }
 
 const ORDERS_PER_PAGE = 3;
 
-function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) {
+function OrdersSection({ returnRequests, onReturnSubmit }: { returnRequests: ReturnRequest[]; onReturnSubmit: (req: ReturnRequest) => void }) {
   const [activeTab, setActiveTab] = useState("current");
   const [page, setPage] = useState(1);
-  const filtered = mockOrders.filter(o => o.tab === activeTab);
+  const [search, setSearch] = useState("");
+  const normalizeSearch = (value: string) => value
+    .replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .trim().toLowerCase();
+  const query = normalizeSearch(search);
+  const matchesUid = (order: Order) => Boolean(query) && Array.from({ length: order.items }, (_, index) => getOrderItemUid(order, index)).some(uid => uid.includes(query));
+  const filtered = mockOrders.filter(order => query
+    ? [order.id, order.siteCode, order.deliveryCode].some(value => normalizeSearch(value).includes(query)) || matchesUid(order)
+    : order.tab === activeTab);
   const demoDataPages = Math.ceil(filtered.length / ORDERS_PER_PAGE);
-  const totalPages = activeTab !== "returned" && demoDataPages > 0 ? 21 : 0;
+  const totalPages = query ? demoDataPages : activeTab !== "returned" && demoDataPages > 0 ? 21 : 0;
   const dataPage = demoDataPages > 0 ? ((page - 1) % demoDataPages) + 1 : 1;
   const paginatedOrders = filtered.slice((dataPage - 1) * ORDERS_PER_PAGE, dataPage * ORDERS_PER_PAGE);
   return (
@@ -432,7 +695,7 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
       <div className="h-px bg-gray-100 mb-5" />
       <div className="flex items-center border border-gray-300 rounded-xl px-4 py-2 gap-2 mb-6 bg-white sm:py-3">
         <Search size={16} className="text-gray-400 shrink-0" />
-        <input type="text" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت یا شماره حواله" className="min-w-0 flex-1 bg-transparent text-sm font-light text-gray-400 outline-none text-right placeholder:text-gray-400 sm:font-normal" style={{ ...F, fontSize: 14 }} />
+        <input type="text" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} aria-label="جستجوی سفارش با کد سفارش، کد سفارش سایت، شماره حواله یا Uid" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت، شماره حواله یا Uid" className="min-w-0 flex-1 bg-transparent text-sm font-light text-gray-400 outline-none text-right placeholder:text-gray-400 sm:font-normal" style={{ ...F, fontSize: 14 }} />
       </div>
       <div className="mb-6 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
         {orderTabs.map(({ key, label, count }) => (
@@ -447,13 +710,14 @@ function OrdersSection({ returnRequests }: { returnRequests: ReturnRequest[] }) 
           </button>
         ))}
       </div>
-      {activeTab === "returned" ? (
+      {query && <p role="status" className="mb-3 text-sm font-light text-[#6A7282]" style={F}>نتایج جستجو در همه سفارش‌ها</p>}
+      {activeTab === "returned" && !query ? (
         <ReturnListSection requests={returnRequests} embedded />
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.length === 0 ? (
-            <div className="text-center py-16"><ShoppingBag size={40} className="text-gray-200 mx-auto mb-3" /><p className="text-gray-400 text-sm" style={F}>سفارشی در این بخش وجود ندارد</p></div>
-          ) : paginatedOrders.map(o => <OrderCard key={o.id} order={o} showPay={activeTab === "review"} />)}
+            <div className="text-center py-16"><ShoppingBag size={40} className="text-gray-200 mx-auto mb-3" /><p className="text-gray-400 text-sm" style={F}>{query ? "سفارشی با این مشخصات پیدا نشد" : "سفارشی در این بخش وجود ندارد"}</p></div>
+          ) : paginatedOrders.map(o => <OrderCard key={o.id} order={o} showPay={o.tab === "review"} onReturnSubmit={onReturnSubmit} highlighted={matchesUid(o)} />)}
         </div>
       )}
       <ProfilePagination page={page} totalPages={totalPages} onPageChange={setPage} compact />
@@ -831,7 +1095,7 @@ function WishlistSection() {
 
 // ─── Return Request ────────────────────────────────────────────────────────
 
-type ReturnProduct = { id: string; name: string; };
+type ReturnProduct = { id: string; name: string; uid?: string; };
 
 const returnableProducts: ReturnProduct[] = [
   { id: "201001", name: "پنتونکست 201001" },
@@ -847,11 +1111,160 @@ const returnableProducts: ReturnProduct[] = [
   { id: "201090", name: "پنتونکست 201090" },
 ];
 
+function getOrderReturnItems(order: Order) {
+  const orderNumber = Number(order.id.slice(-2));
+  return Array.from({ length: order.items }, (_, index) => {
+    const source = returnableProducts[(orderNumber + index) % returnableProducts.length];
+    return {
+      product: {
+        id: `${order.id}-${source.id}-${index + 1}`,
+        name: source.name,
+        uid: getOrderItemUid(order, index),
+      },
+      qty: 1,
+    };
+  });
+}
+
+const returnableUidProducts = mockOrders
+  .filter(order => order.status === "delivered" && !order.returnExpired)
+  .flatMap(order => getOrderReturnItems(order).map(item => item.product));
+
 type ReturnItem = { product: ReturnProduct; qty: number; };
 
 export type ReturnRequest = {
   id: string; date: string; items: ReturnItem[]; status: "pending" | "approved" | "rejected"; shippingMethod?: string;
 };
+
+function reviewReturnItems(items: ReturnItem[]) {
+  const results: Record<string, "success" | "rejected"> = {};
+  const acceptedItems = items.filter(item => {
+    const uid = item.product.uid;
+    if (!uid) return false;
+    results[uid] = "success";
+    return true;
+  });
+  return { results, acceptedItems };
+}
+
+function ReturnSuccessDialog({ open, onOpenChange, requestId, onAfterClose }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  requestId: string;
+  onAfterClose: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="gap-6 rounded-3xl border-gray-200 bg-white p-6 text-center sm:max-w-lg [&>button.absolute]:left-6 [&>button.absolute]:right-auto [&>button.absolute]:top-6 [&>button.absolute]:text-[#CA165C]" style={F}
+        onCloseAutoFocus={event => { event.preventDefault(); onAfterClose(); }}>
+        <DialogHeader className="items-center gap-3 text-center sm:text-center">
+          <div aria-hidden="true" className="mb-1 flex size-14 items-center justify-center rounded-2xl bg-[#370080]/5 text-[#370080]">
+            <CheckCircle2 size={28} strokeWidth={1.7} />
+          </div>
+          <DialogTitle className="text-sm font-bold leading-6 text-[#1E2939]">با موفقیت ثبت شد.</DialogTitle>
+          <DialogDescription className="-mt-2 text-sm font-light leading-6 text-[#6A7282]">
+            شناسه درخواست مرجوعی: <bdi dir="ltr" className="inline-block break-all tabular-nums">{requestId.replace("ret-", "MRJ-")}</bdi>
+          </DialogDescription>
+        </DialogHeader>
+        <button type="button" onClick={() => onOpenChange(false)} className="min-h-11 w-full rounded-2xl bg-[#CA165C] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#D5457D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]">بستن</button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReturnImageUploadBox({ receipt = false, disabled = false, onFilesChange, error = "" }: {
+  receipt?: boolean;
+  disabled?: boolean;
+  onFilesChange?: (hasFiles: boolean) => void;
+  error?: string;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [imageError, setImageError] = useState("");
+  const inputId = useId();
+  const title = receipt ? "بارگذاری رسید باربری" : "بارگذاری تصویر کالاها";
+  const displayError = imageError || error;
+
+  useEffect(() => {
+    const urls = files.map(file => URL.createObjectURL(file));
+    setPreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFiles = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (nextFiles.length === 0) return;
+    if (nextFiles.some(file => !["image/png", "image/jpeg"].includes(file.type))) {
+      setImageError("لطفاً تصاویر PNG یا JPG انتخاب کنید.");
+      return;
+    }
+    if (nextFiles.some(file => file.size > 5 * 1024 * 1024)) {
+      setImageError("حجم هر تصویر نباید بیشتر از ۵ مگابایت باشد.");
+      return;
+    }
+    setImageError("");
+    setFiles(nextFiles);
+    onFilesChange?.(true);
+  };
+
+  return (
+    <div className="flex min-w-0 flex-col gap-2" style={F}>
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl border border-dashed border-[#CA165C] bg-white px-4 py-[51.2px] text-center">
+      <input id={inputId} type="file" multiple={!receipt} disabled={disabled} accept="image/png,image/jpeg" onChange={handleImageChange} aria-invalid={Boolean(displayError)} aria-describedby={displayError ? `${inputId}-error` : undefined} className="peer sr-only" />
+      <label htmlFor={inputId} className="flex cursor-pointer items-center gap-1 rounded-lg text-sm font-semibold text-[#CA165C] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#CA165C] peer-disabled:cursor-wait peer-disabled:opacity-50">
+        <span aria-hidden="true">↑</span><span>{title}</span>
+      </label>
+      <span className="text-[13px] leading-5 text-gray-400">{receipt ? "فرمت‌های مجاز PNG و JPG — حداکثر حجم ۵ مگابایت" : "فرمت‌های مجاز PNG و JPG — حداکثر حجم هر تصویر ۵ مگابایت"}</span>
+      {previews.length > 0 && (
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          {previews.map((preview, index) => <img key={preview} src={preview} alt={`${receipt ? "رسید باربری" : "تصویر کالا"} انتخاب‌شده ${fmt(index + 1)}`} title={files[index]?.name} className="size-12 rounded-lg border border-gray-200 object-cover" />)}
+        </div>
+      )}
+    </div>
+      {displayError && <p id={`${inputId}-error`} role="alert" className="text-right text-xs font-medium text-[#CA165C]">{displayError}</p>}
+    </div>
+  );
+}
+
+function ReturnUploadBoxes({ resetKey, disabled = false, onProductsChange, onReceiptChange, productsError, receiptError }: {
+  resetKey: number;
+  disabled?: boolean;
+  onProductsChange?: (hasFiles: boolean) => void;
+  onReceiptChange?: (hasFiles: boolean) => void;
+  productsError?: string;
+  receiptError?: string;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <ReturnImageUploadBox key={`products-${resetKey}`} disabled={disabled} onFilesChange={onProductsChange} error={productsError} />
+      <ReturnImageUploadBox key={`receipt-${resetKey}`} receipt disabled={disabled} onFilesChange={onReceiptChange} error={receiptError} />
+    </div>
+  );
+}
+
+function ReturnRequestItemRow({ item, onRemove }: { item: ReturnItem; onRemove: () => void }) {
+  return (
+    <tr data-return-request-item className="border-t border-gray-200 bg-white first:border-t-0">
+      <td className="px-3 py-3 align-middle sm:px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="size-11 shrink-0 overflow-hidden rounded-lg border border-gray-200">
+            <ImageWithFallback src={roll2} alt={item.product.name} className="h-full w-full object-cover" />
+          </div>
+          <span className="whitespace-nowrap text-sm font-semibold leading-6 text-[#1E2939]">{item.product.name}</span>
+        </div>
+      </td>
+      <td className="px-3 py-3 text-center align-middle sm:px-4">
+        <span dir="ltr" className="inline-block whitespace-nowrap text-sm font-medium tabular-nums text-[#1E2939]">{item.product.uid}</span>
+      </td>
+      <td className="px-2 py-3 text-center align-middle">
+        <button type="button" onClick={onRemove} aria-label={`حذف ردیف ${item.product.uid}`} className="min-h-8 rounded-lg border border-[#CA165C] bg-[#CA165C] px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-[#D5457D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]">
+          حذف
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => void }) {
   const [search, setSearch] = useState("");
@@ -859,6 +1272,15 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
   const [items, setItems] = useState<ReturnItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
   const [shippingMethodOpen, setShippingMethodOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [latestRequestId, setLatestRequestId] = useState("");
+  const [uploadResetKey, setUploadResetKey] = useState(0);
+  const [hasProductImages, setHasProductImages] = useState(false);
+  const [hasShippingReceipt, setHasShippingReceipt] = useState(false);
+  const [uploadValidationShown, setUploadValidationShown] = useState(false);
+  const submitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const shippingDropRef = useRef<HTMLDivElement>(null);
 
@@ -871,9 +1293,15 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const filtered = returnableProducts.filter(p =>
-    p.name.includes(search) || p.id.includes(search)
-  );
+  useEffect(() => () => {
+    if (submitTimer.current !== null) clearTimeout(submitTimer.current);
+  }, []);
+
+  const uidQuery = search
+    .replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .trim();
+  const filtered = returnableUidProducts.filter(product => product.uid.includes(uidQuery));
 
   const selectProduct = (p: ReturnProduct) => {
     if (!items.find(i => i.product.id === p.id)) {
@@ -884,27 +1312,47 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
   };
 
   const removeItem = (id: string) => setItems(prev => prev.filter(i => i.product.id !== id));
-  const setQty = (id: string, val: number) =>
-    setItems(prev => prev.map(i => i.product.id === id ? { ...i, qty: Math.max(1, val) } : i));
 
   const handleSubmit = () => {
-    if (items.length === 0 || !shippingMethod) return;
-    onSubmit({
-      id: Date.now().toString(),
-      date: new Date().toLocaleDateString("fa-IR"),
-      items,
-      status: "pending",
-      shippingMethod,
-    });
-    setItems([]);
-    setShippingMethod("");
+    if (submitTimer.current !== null) return;
+    setUploadValidationShown(true);
+    if (items.length === 0 || !shippingMethod || !hasProductImages || !hasShippingReceipt) return;
+    const submittedItems = [...items];
+    setIsSubmitting(true);
+    setDropdownOpen(false);
+    setShippingMethodOpen(false);
+    submitTimer.current = setTimeout(() => {
+      const { acceptedItems } = reviewReturnItems(submittedItems);
+      const requestId = `ret-${Date.now()}`;
+      setLatestRequestId(requestId);
+      setResultDialogOpen(true);
+      setItems([]);
+      setUploadResetKey(previous => previous + 1);
+      setHasProductImages(false);
+      setHasShippingReceipt(false);
+      setUploadValidationShown(false);
+      setSearch("");
+      setShippingMethod("");
+      setIsSubmitting(false);
+      submitTimer.current = null;
+      if (acceptedItems.length > 0) {
+        onSubmit({
+          id: requestId,
+          date: new Date().toLocaleDateString("fa-IR"),
+          items: acceptedItems,
+          status: "pending",
+          shippingMethod,
+        });
+      }
+    }, 2000);
   };
 
   return (
     <div>
-      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>ثبت درخواست مرجوعی</h1></ProfileSectionHeading>
+      <ProfileSectionHeading><h1 className="text-right text-sm font-black text-gray-900" style={F}>ثبت درخواست مرجوعی</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
+      <fieldset disabled={isSubmitting} className="min-w-0">
       {/* Shipping method and product search */}
       <div className="mb-5 flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
         <div className="flex w-full flex-col gap-2 sm:w-2/5">
@@ -956,27 +1404,37 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
             onClick={() => setDropdownOpen(true)}
           >
             <input
+              ref={searchInputRef}
               value={search}
               onChange={e => { setSearch(e.target.value); setDropdownOpen(true); }}
-              placeholder="جستجوی کد یا نام محصول..."
+              onFocus={() => setDropdownOpen(true)}
+              onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); setDropdownOpen(false); } }}
+              aria-label="جستجوی UID برای ثبت مرجوعی"
+              aria-expanded={dropdownOpen}
+              aria-controls="return-uid-results"
+              placeholder="جستجوی UID رول..."
               className="min-w-0 flex-1 bg-transparent text-right text-sm font-light text-[#6A7282] outline-none placeholder:text-[#6A7282]"
               style={{ ...F, fontSize: 14, fontWeight: 300 }}
             />
             <Search size={14} className="shrink-0 text-[#6A7282]" />
           </div>
           {dropdownOpen && (
-            <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+            <div id="return-uid-results" className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              <p className="sticky top-0 z-10 border-b border-gray-200 bg-white px-4 py-3 text-right text-sm font-light leading-6 text-[#CA165C]" style={F}>
+                توجه: uid رول هایی که از زمان خرید آنها 30 روز نگذشته باشد، در این لیست نمایش داده می شوند.
+              </p>
               {filtered.map(p => {
                 const already = !!items.find(i => i.product.id === p.id);
                 return (
                   <button
+                    type="button"
                     key={p.id}
                     onClick={() => selectProduct(p)}
                     disabled={already}
                     className={`w-full flex items-center justify-between px-4 py-3 text-sm text-right transition-colors border-b border-gray-100 last:border-0 ${already ? "bg-gray-50 cursor-default" : "hover:bg-gray-50"}`}
                     style={F}
                   >
-                    <span className={already ? "text-gray-400" : "text-gray-700"}>{p.name}</span>
+                    <span dir="ltr" className={`tabular-nums ${already ? "text-gray-400" : "text-[#1E2939]"}`}>{p.uid}</span>
                     {already && <CheckCircle2 size={15} className="text-[#3d1a6e] shrink-0" />}
                   </button>
                 );
@@ -989,66 +1447,53 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
 
       {/* Items list */}
       {items.length > 0 && (
-        <div className="flex flex-col gap-3 mb-6">
-          {items.map(item => (
-            <div key={item.product.id} data-return-request-item className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border border-gray-200 rounded-2xl p-3 sm:flex sm:items-center sm:p-4 bg-white">
-
-              {/* Image + upload — first in DOM = visual RIGHT in RTL */}
-              <div className="grid min-w-0 grid-cols-[56px_minmax(0,1fr)] items-start gap-x-2 gap-y-0.5 sm:flex sm:flex-col sm:shrink-0 sm:items-center sm:gap-1.5 sm:min-w-[72px]">
-                <div className="w-14 h-14 rounded-xl bg-pink-100 overflow-hidden border border-pink-200">
-                  <ImageWithFallback src={roll2} alt={item.product.name} className="w-full h-full object-cover" />
-                </div>
-                <span className="min-w-0 self-center break-words text-right text-sm font-semibold leading-6 text-gray-800 sm:hidden" style={F}>{item.product.name}</span>
-                <button className="col-span-2 mt-4 sm:mt-0 text-[11px] sm:text-[10px] font-semibold flex items-center gap-0.5" style={{ color: "#CA165C", ...F }}>
-                  <span>↑</span><span>بارگذاری تصویر کالا</span>
-                </button>
-                <span className="col-span-2 max-w-full text-right text-[13px] leading-5 text-gray-400 sm:text-center" style={F}>PNG و JPG — حداکثر ۵ مگابایت</span>
-              </div>
-
-              {/* Product name — middle, grows */}
-              <span className="hidden min-w-0 flex-1 break-words text-sm font-semibold text-gray-800 text-right sm:block" style={F}>{item.product.name}</span>
-
-              {/* Qty controls */}
-              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
-              <div className="flex items-center justify-between">
-                <button type="button" aria-label={`کاهش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty - 1)} className="flex h-11 w-9 items-center justify-center rounded-full text-[#CA165C] sm:size-7"><span className="flex size-7 items-center justify-center rounded-full border-[1.5px] border-[#CA165C] hover:bg-[#CA165C]/5"><Minus size={13} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></span></button>
-                <span className="w-5 text-center text-sm font-bold text-[#CA165C] sm:w-6" style={F}>{item.qty.toLocaleString("fa-IR")}</span>
-                <button type="button" aria-label={`افزایش تعداد ${item.product.name}`} onClick={() => setQty(item.product.id, item.qty + 1)} className="flex h-11 w-9 items-center justify-center rounded-full text-[#CA165C] sm:size-7"><span className="flex size-7 items-center justify-center rounded-full border-[1.5px] border-[#CA165C] hover:bg-[#CA165C]/5"><Plus size={13} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" /></span></button>
-              </div>
-
-              {/* حذف — last in DOM = visual LEFT in RTL */}
-              <button
-                onClick={() => removeItem(item.product.id)}
-                className="w-full shrink-0 rounded-lg px-1.5 py-1 text-sm font-bold text-white transition-colors sm:mr-6 sm:w-auto sm:px-4 sm:py-2"
-                style={{ backgroundColor: "#CA165C", ...F }}
-              >
-                حذف
-              </button>
-              </div>
+        <div className="mb-6 mt-8 overflow-x-auto" role="region" aria-label="جدول UIDهای انتخاب‌شده برای مرجوعی" tabIndex={0}>
+          <div className="flex min-w-[640px] flex-col gap-2" style={F}>
+            <div aria-hidden="true" className="grid grid-cols-3 rounded-2xl border border-gray-200 bg-white text-sm font-light leading-6 text-[#6A7282]">
+              <span className="px-3 py-4 text-right sm:px-4">محصول</span>
+              <span className="px-3 py-4 text-center sm:px-4">UID</span>
+              <span className="px-3 py-4 text-center sm:px-4">حذف ردیف ثبت شده</span>
             </div>
-          ))}
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+              <table className="w-full table-fixed border-collapse text-right">
+                <caption className="sr-only">اقلام انتخاب‌شده برای ثبت درخواست مرجوعی</caption>
+                <colgroup><col className="w-1/3" /><col className="w-1/3" /><col className="w-1/3" /></colgroup>
+                <thead className="sr-only">
+                  <tr><th scope="col">محصول</th><th scope="col">UID</th><th scope="col">حذف ردیف ثبت شده</th></tr>
+                </thead>
+                <tbody>
+                  {items.map(item => <ReturnRequestItemRow key={item.product.id} item={item} onRemove={() => removeItem(item.product.id)} />)}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Shipping receipt upload */}
-      <div className="mb-6 flex flex-col items-start gap-1 rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-right">
-        <button className="text-sm font-semibold flex items-center gap-1" style={{ color: "#CA165C", ...F }}>
-          <span>↑</span><span>بارگذاری رسید باربری</span>
-        </button>
-        <span className="text-[13px] leading-5 text-gray-400" style={F}>فرمت‌های مجاز PNG و JPG — حداکثر حجم ۵ مگابایت</span>
+      <div className="mb-6">
+        <ReturnUploadBoxes resetKey={uploadResetKey} disabled={isSubmitting}
+          onProductsChange={setHasProductImages}
+          onReceiptChange={setHasShippingReceipt}
+          productsError={uploadValidationShown && !hasProductImages ? "لطفا تصویر کالا رو بارگذاری کنید." : ""}
+          receiptError={uploadValidationShown && !hasShippingReceipt ? "لطفا تصویر رسید باربری رو بارگذاری کنید." : ""}
+        />
       </div>
 
       {/* Submit — visual LEFT (flex justify-end in RTL) */}
       <div className="flex justify-end">
         <button
           onClick={handleSubmit}
-          disabled={items.length === 0 || !shippingMethod}
-          className={`px-8 py-3 rounded-xl text-white text-sm font-black transition-colors ${items.length === 0 || !shippingMethod ? "bg-gray-300 cursor-not-allowed" : ""}`}
+          disabled={isSubmitting || items.length === 0 || !shippingMethod}
+          aria-busy={isSubmitting}
+          aria-label={isSubmitting ? "در حال بررسی درخواست مرجوعی" : "ثبت درخواست مرجوعی"}
+          className={`inline-flex min-h-11 min-w-48 items-center justify-center px-8 py-3 rounded-xl text-white text-sm font-black transition-colors ${items.length === 0 || !shippingMethod ? "bg-gray-300 cursor-not-allowed" : ""}`}
           style={{ ...(items.length > 0 && shippingMethod ? { backgroundColor: "#370080" } : {}), ...F }}
         >
-          ثبت درخواست مرجوعی
+          {isSubmitting ? <RefreshCw size={20} className="animate-spin text-white" aria-hidden="true" /> : "ثبت درخواست مرجوعی"}
         </button>
       </div>
+      </fieldset>
+      <ReturnSuccessDialog open={resultDialogOpen} onOpenChange={setResultDialogOpen} requestId={latestRequestId} onAfterClose={() => searchInputRef.current?.focus()} />
     </div>
   );
 }
@@ -1066,7 +1511,7 @@ const mockReturnRequests: ReturnRequest[] = [
     id: "ret-001",
     date: "۱۴۰۵/۴/۱",
     status: "approved",
-    items: [{ product: { id: "201002", name: "پنتونکست 201002" }, qty: 2 }],
+    items: [{ product: { id: "201002", name: "پنتونکست 201002" }, qty: 1 }],
   },
   {
     id: "ret-002",
@@ -1074,7 +1519,7 @@ const mockReturnRequests: ReturnRequest[] = [
     status: "pending",
     items: [
       { product: { id: "201050", name: "پنتونکست 201050" }, qty: 1 },
-      { product: { id: "201060", name: "پنتونکست 201060" }, qty: 3 },
+      { product: { id: "201060", name: "پنتونکست 201060" }, qty: 1 },
     ],
   },
 ];
@@ -1143,28 +1588,51 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
                         <div id={detailId} aria-hidden={!isOpen} className="grid transition-[grid-template-rows,opacity] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? "1fr" : "0fr", opacity: isOpen ? 1 : 0 }}>
                           <div className="min-h-0 overflow-hidden">
                             <div className="border-t border-gray-200 pb-8 pt-4">
-                              <p data-return-items-title className="mb-3 px-3 text-sm font-light leading-6 text-[#6A7282] sm:px-6">اقلام مرجوعی</p>
-                              <div className="relative bg-white py-px">
-                                <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 inset-x-3 rounded-xl border border-gray-200 sm:inset-x-6" />
-                                {req.items.map((item, index) => (
-                                  <div key={item.product.id} className="relative grid min-w-0 grid-cols-3 items-center">
-                                    {index > 0 && <span aria-hidden="true" className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gray-200 sm:inset-x-6" />}
-                                    <div className="col-span-2 flex min-w-0 items-center gap-2 py-2 pl-2 pr-5 sm:gap-3 sm:py-3 sm:pl-3 sm:pr-9">
+                              <p data-return-items-title className="mb-3 px-9 text-right text-sm font-light leading-6 text-[#6A7282] sm:px-18">اقلام مرجوعی</p>
+                              <div className="flex flex-col gap-2 px-9 sm:px-18">
+                                <div aria-hidden="true" className="grid grid-cols-3 rounded-2xl border border-gray-200 bg-white text-sm font-light leading-6 text-[#6A7282]">
+                                  <span className="px-2 py-4 text-right sm:px-4">محصول</span>
+                                  <span className="px-2 py-4 text-center sm:px-4">UID</span>
+                                  <span className="px-2 py-4 text-center sm:px-4">تعداد</span>
+                                </div>
+                                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                                <table className="w-full table-fixed border-collapse text-right">
+                                  <caption className="sr-only">اقلام مرجوعی درخواست {reqCode}</caption>
+                                  <colgroup><col className="w-1/3" /><col className="w-1/3" /><col className="w-1/3" /></colgroup>
+                                  <thead className="sr-only">
+                                    <tr><th scope="col">محصول</th><th scope="col">UID</th><th scope="col">تعداد</th></tr>
+                                  </thead>
+                                  <tbody>
+                                {req.items.map((item, index) => {
+                                  const fallbackUid = `${item.product.id.replace(/\D/g, "")}${String(index + 1).padStart(10, "0")}`.slice(0, 16);
+                                  const uid = item.product.uid ?? fallbackUid;
+                                  return (
+                                  <tr key={item.product.id} className="border-t border-gray-200 first:border-t-0">
+                                    <td className="px-2 py-3 align-middle sm:px-4">
+                                      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                                       <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 sm:size-11">
                                         <ImageWithFallback src={roll2} alt={item.product.name} className="h-full w-full object-cover" />
                                       </div>
                                       <span className="min-w-0 break-words text-xs font-medium leading-5 text-[#1E2939] sm:text-sm sm:font-semibold">{item.product.name}</span>
-                                    </div>
-                                    <div className="min-w-0 px-3 py-2 text-right sm:px-6 sm:py-3">
-                                      <span data-return-item-quantity className="whitespace-nowrap rounded-lg border border-[#CA165C] bg-white px-2 py-1 text-xs font-semibold leading-5 text-[#CA165C]">{fmt(item.qty)} عدد</span>
-                                    </div>
-                                  </div>
-                                ))}
+                                      </div>
+                                    </td>
+                                    <td className="px-2 py-3 text-center align-middle sm:px-4">
+                                      <span dir="ltr" className="block break-all text-center text-[11px] font-medium tabular-nums text-[#1E2939] sm:text-sm">{uid}</span>
+                                    </td>
+                                    <td className="px-2 py-3 text-center align-middle sm:px-4">
+                                      <span data-return-item-quantity className="whitespace-nowrap rounded-lg border border-[#CA165C] bg-white px-2 py-1 text-xs font-semibold leading-5 text-[#CA165C]">{fmt(1)} عدد</span>
+                                    </td>
+                                  </tr>
+                                  );
+                                })}
+                                  </tbody>
+                                </table>
+                                </div>
                               </div>
-                              <div className="mt-4 grid max-w-[560px] grid-cols-2 items-start gap-4 px-3 sm:px-6">
+                              <div className="mt-4 grid max-w-[560px] grid-cols-2 items-start gap-4 px-9 sm:px-18">
                                 <div className="min-w-0">
                                 <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">رسید باربری</p>
-                                <div data-return-receipt className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
+                                <div data-return-receipt className="ml-auto w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
                                   <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
                                     <ImageWithFallback src={roll2} alt="رسید باربری" className="h-full w-full object-cover" />
                                   </div>
@@ -3647,7 +4115,6 @@ export function ProfilePage() {
 
   const handleReturnSubmit = (req: ReturnRequest) => {
     setReturnRequests(prev => [req, ...prev]);
-    setActive("returns");
   };
 
   const handleMenu = (key: string) => {
@@ -3785,7 +4252,7 @@ export function ProfilePage() {
               </>
             )}
 
-            {active === "orders"   && <OrdersSection returnRequests={returnRequests} />}
+            {active === "orders"   && <OrdersSection returnRequests={returnRequests} onReturnSubmit={req => setReturnRequests(previous => [req, ...previous])} />}
             {active === "notifs"   && <NotificationsSection />}
             {active === "wishlist" && <WishlistSection />}
             {active === "quick"    && <QuickOrderSection />}
