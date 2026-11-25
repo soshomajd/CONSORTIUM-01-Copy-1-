@@ -342,14 +342,14 @@ export function ProductPage() {
               </div>
 
               {/* Purchase card */}
-              <div className={usesDetailedProductLayout(p.code) ? "w-full min-w-0 sm:mb-5 sm:max-w-[400px] sm:self-end sm:justify-self-end xl:absolute xl:bottom-0 xl:left-0 xl:mb-0" : "contents"}>
-              {usesDetailedProductLayout(p.code) && <div className="mb-4 w-full text-left sm:text-right" style={F}><ProductOfferBenefits compactMobile /></div>}
+              <div className={usesDetailedProductLayout(p.code) ? "flex w-full min-w-0 flex-col sm:mb-5 sm:max-w-[400px] sm:self-end sm:justify-self-end xl:absolute xl:inset-x-0 xl:bottom-0 xl:mb-0 xl:max-w-none xl:flex-row xl:items-end xl:gap-6" : "contents"}>
+              {usesDetailedProductLayout(p.code) && <div dir="rtl" className="mb-4 w-full text-right xl:absolute xl:bottom-full xl:right-0 xl:mb-0 xl:w-[calc(100%-424px)] xl:min-w-0" style={F}><ProductOfferBenefits compactMobile /></div>}
               <div
               ref={purchaseCardRef}
               data-product-purchase-card
               className={`w-full border border-gray-200 p-5 bg-white ${
                 usesDetailedProductLayout(p.code)
-                  ? "rounded-[28px]"
+                  ? "rounded-[28px] xl:mr-auto xl:w-[400px] xl:shrink-0"
                   : "rounded-2xl"
               }`}
 
