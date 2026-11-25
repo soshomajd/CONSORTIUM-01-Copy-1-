@@ -331,7 +331,6 @@ export function ProductPage() {
                   </div>
                 ))}
                 {/* Status row */}
-                {usesDetailedProductLayout(p.code) && <div className="mt-[50px] self-end text-left sm:self-auto sm:text-right xl:pt-2 xl:pr-2"><ProductOfferBenefits compactMobile /></div>}
                 {!usesDetailedProductLayout(p.code) && (
                   <div dir="rtl" className="flex items-center justify-end gap-2 text-sm">
                     <span style={{ color: p.outOfStock ? "#CA165C" : "#16a34a", fontWeight: 600 }}>
@@ -343,12 +342,14 @@ export function ProductPage() {
               </div>
 
               {/* Purchase card */}
+              <div className={usesDetailedProductLayout(p.code) ? "w-full min-w-0 sm:mb-5 sm:max-w-[400px] sm:self-end sm:justify-self-end xl:absolute xl:bottom-0 xl:left-0 xl:mb-0" : "contents"}>
+              {usesDetailedProductLayout(p.code) && <div className="mb-4 w-full text-left sm:text-right" style={F}><ProductOfferBenefits compactMobile /></div>}
               <div
               ref={purchaseCardRef}
               data-product-purchase-card
               className={`w-full border border-gray-200 p-5 bg-white ${
                 usesDetailedProductLayout(p.code)
-                  ? "rounded-[28px] sm:mb-5 sm:max-w-[400px] sm:self-end sm:justify-self-end xl:absolute xl:bottom-0 xl:left-0 xl:mb-0"
+                  ? "rounded-[28px]"
                   : "rounded-2xl"
               }`}
 
@@ -438,6 +439,7 @@ export function ProductPage() {
                 </button>}
               </div>
 
+              </div>
             </div>
           </div>
           {/* ── Below product: guarantees + tabs + description ── */}
@@ -463,7 +465,7 @@ function ProductMeta({ name, code, album, color, onReviewAdded }: { name: string
   return (
     <div className="mt-12" style={F}>
             {/* 4 guarantee icons */}
-      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-6 ${usesDetailedProductLayout(code) ? "relative -top-7 rounded-[28px] border border-gray-200 bg-white px-5 pt-6 pb-7 text-[#6A7282]" : "pt-12 pb-8 border-t border-b border-gray-200"}`} style={usesDetailedProductLayout(code) ? { boxShadow: "0 2px 16px rgba(0,0,0,0.06)" } : undefined}>
+      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-6 ${usesDetailedProductLayout(code) ? "relative -top-[15px] rounded-[28px] border border-gray-200 bg-white px-5 pt-6 pb-7 text-[#6A7282]" : "pt-12 pb-8 border-t border-b border-gray-200"}`} style={usesDetailedProductLayout(code) ? { boxShadow: "0 2px 16px rgba(0,0,0,0.06)" } : undefined}>
 
         {guarantees.map(({ icon, label }) => (
           <div key={label} className="flex flex-col items-center gap-3 text-center">

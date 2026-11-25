@@ -2,3 +2,8 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './catalog-layout.css';
+
+/* Apply the same pointer affordance to enabled buttons across the storefront. */
+:is(button, [role='button'], input[type='button'], input[type='submit'], input[type='reset']):not(:disabled):not([aria-disabled='true']):not([data-disabled]) {
+  cursor: pointer;
+}

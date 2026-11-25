@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Link } from "react-router"
+import { Check, Loader2 } from "lucide-react"
 import type { CartItem } from "@/app/store/cart"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { ProductCartControl } from "./ProductCartControl"
@@ -79,9 +80,10 @@ export function ProductUpsellDialog({
         <button type="button" onClick={toggleExpanded} aria-label={expanded ? "جمع کردن کالاهای مرتبط" : "نمایش تمام‌صفحه کالاهای مرتبط"} aria-expanded={expanded} className="product-upsell-handle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CA165C]">
           <span aria-hidden="true" className="h-1 w-10 rounded-full bg-gray-300" />
         </button>
-        <DialogHeader className="shrink-0 gap-3 px-5 pb-5 pt-9 text-right sm:px-7 sm:pt-7 sm:text-right">
-          <span className="w-fit rounded-full bg-[#370080]/5 px-3 py-1 text-xs font-medium text-[#370080]">
-            کالا به سبد خرید اضافه شد
+        <DialogHeader className="shrink-0 gap-3 px-5 pb-5 pt-9 text-right sm:px-7 sm:text-right">
+          <span className="flex w-fit items-center gap-2 pl-6 text-xs font-medium text-[#370080]" role="status">
+            <span className="product-upsell-success-icon flex size-6 shrink-0 items-center justify-center rounded-full bg-[#370080] text-white" aria-hidden="true"><Check size={15} strokeWidth={2.5} /></span>
+            کالا به سبد خرید اضافه شد!
           </span>
           <div className="flex items-center justify-between gap-3 pl-6">
             <DialogTitle className="text-lg font-bold leading-7 text-[#1E2939] sm:text-xl">کالاهای مرتبط</DialogTitle>
@@ -100,7 +102,7 @@ export function ProductUpsellDialog({
             className="product-upsell-scroll max-h-[48dvh] space-y-3 overflow-y-auto overscroll-contain scroll-smooth px-5 pb-8 pt-1 [scrollbar-width:thin] motion-reduce:scroll-auto sm:max-h-[440px] sm:px-7"
           >
             {products.map(product => (
-              <article key={product.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-2xl border border-gray-200 bg-white p-3 sm:grid-cols-[88px_minmax(0,1fr)_184px] sm:items-center sm:gap-4 sm:p-4">
+              <article key={product.id} className="product-upsell-card grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-2xl border border-gray-200 bg-white p-3 sm:grid-cols-[88px_minmax(0,1fr)_184px] sm:items-center sm:gap-4 sm:p-4">
                 <Link to={`/product/${product.code}`} onClick={() => handleOpenChange(false)} aria-label={`مشاهده ${product.name}`} className="relative row-span-2 aspect-[4/5] self-start overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#370080] sm:row-span-1 sm:self-center">
                   <ImageWithFallback src={product.img} alt={product.name} className="absolute inset-0 h-full w-full rounded-2xl object-cover" />
                 </Link>
@@ -110,7 +112,7 @@ export function ProductUpsellDialog({
                     {product.name}
                   </Link>
                 </div>
-                <div className="col-start-2 flex w-full max-w-[184px] min-w-0 flex-col gap-2 justify-self-end sm:col-start-auto">
+                <div className="product-upsell-card-purchase col-start-2 flex w-full max-w-[184px] min-w-0 flex-col gap-2 justify-self-end sm:col-start-auto">
                   <div className="flex flex-wrap items-baseline justify-end gap-x-2 gap-y-1 text-left">
                     {product.originalPrice > product.unitPrice && <span className="text-xs font-light text-[#1E2939] line-through">{product.originalPrice.toLocaleString("fa-IR")}</span>}
                     <span className="text-sm font-semibold text-[#1E2939]">{product.unitPrice.toLocaleString("fa-IR")} <span className="text-xs font-light">تومان</span></span>
@@ -119,6 +121,9 @@ export function ProductUpsellDialog({
                 </div>
               </article>
             ))}
+            <div className="flex justify-center py-4 text-[#370080]" role="status" aria-label="در حال بارگذاری کالاهای مرتبط">
+              <Loader2 size={24} strokeWidth={1.8} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            </div>
           </div>
           <div aria-hidden="true" className="product-upsell-edge-blur pointer-events-none absolute bottom-0 h-10" />
         </div>

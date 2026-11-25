@@ -19,7 +19,7 @@ export function SimilarProducts() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section aria-labelledby="similar-products-heading" className="catalog-card-layout min-w-0 pb-6" dir="rtl" data-similar-products>
+    <section aria-labelledby="similar-products-heading" className="catalog-card-layout mt-5 min-w-0 pb-6" dir="rtl" data-similar-products>
       <Carousel
         dir="rtl"
         aria-label="کالاهای مشابه"
@@ -51,6 +51,7 @@ export function SimilarProducts() {
                 hasIncentive={item.code === "WP-C317"}
                 fastDelivery={item.code === "WP-D412"}
                 amazingTypography
+                compactOffers
                 fluid
               />
             </CarouselItem>

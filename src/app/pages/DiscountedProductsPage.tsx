@@ -331,8 +331,8 @@ export function ProductCatalogPage({
           {/* Main layout: sidebar + grid */}
           <div className="contents items-start gap-6 lg:grid lg:grid-cols-[312px_minmax(0,1fr)]">
             {/* Filter sidebar — first in DOM = right side in RTL */}
-            <div className={`min-w-0 ${sidebarContent ? "order-first mb-4 lg:order-none lg:mb-0" : "hidden lg:block"} lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] ${sidebarContent ? "" : "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain"}`}>
-              {sidebarContent && <div className="mb-4 [&>*]:static [&>*]:mt-0">{sidebarContent}</div>}
+            <div className={`min-w-0 ${sidebarContent ? "order-first mb-4 flex flex-col gap-4 lg:order-none lg:mb-0" : "hidden lg:block"} lg:sticky lg:top-[calc(var(--storefront-header-height,121px)+16px)] ${sidebarContent ? "" : "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain"}`}>
+              {sidebarContent && <div className="lg:order-last [&>*]:static [&>*]:mt-0">{sidebarContent}</div>}
               <aside
                 className={`hidden lg:block w-full overflow-hidden rounded-2xl border border-gray-200 bg-white ${sidebarContent ? "lg:max-h-[calc(100dvh-var(--storefront-header-height,121px)-32px)] lg:overflow-y-auto lg:overscroll-contain" : ""}`}
                 aria-label="فیلتر محصولات"

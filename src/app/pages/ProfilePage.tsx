@@ -267,6 +267,8 @@ function OrderReturnPanel({ order, onSubmit, onClose }: { order: Order; onSubmit
   const [latestRequestId, setLatestRequestId] = useState("");
   const [uploadResetKey, setUploadResetKey] = useState(0);
   const [hasProductImages, setHasProductImages] = useState(false);
+  const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
+  const [shippingReceiptFiles, setShippingReceiptFiles] = useState<File[]>([]);
   const [hasShippingReceipt, setHasShippingReceipt] = useState(false);
   const [uploadValidationShown, setUploadValidationShown] = useState(false);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
@@ -320,6 +322,8 @@ function OrderReturnPanel({ order, onSubmit, onClose }: { order: Order; onSubmit
       setLatestRequestId(requestId);
       setUploadResetKey(previous => previous + 1);
       setHasProductImages(false);
+      setProductImageFiles([]);
+      setShippingReceiptFiles([]);
       setHasShippingReceipt(false);
       setUploadValidationShown(false);
       setResultDialogOpen(true);
@@ -333,6 +337,8 @@ function OrderReturnPanel({ order, onSubmit, onClose }: { order: Order; onSubmit
           items: acceptedItems,
           status: "pending",
           shippingMethod,
+          productImages: [...productImageFiles],
+          shippingReceipt: shippingReceiptFiles[0],
         });
       }
     }, 2000);
@@ -459,6 +465,8 @@ function OrderReturnPanel({ order, onSubmit, onClose }: { order: Order; onSubmit
       <div className="mt-5">
         <ReturnUploadBoxes resetKey={uploadResetKey} disabled={isSubmitting}
           onProductsChange={setHasProductImages}
+          onProductFilesChange={setProductImageFiles}
+          onReceiptFilesChange={setShippingReceiptFiles}
           onReceiptChange={setHasShippingReceipt}
           productsError={uploadValidationShown && !hasProductImages ? "لطفا تصویر کالا رو بارگذاری کنید." : ""}
           receiptError={uploadValidationShown && !hasShippingReceipt ? "لطفا تصویر رسید باربری رو بارگذاری کنید." : ""}
@@ -685,7 +693,7 @@ function OrdersSection({ returnRequests, onReturnSubmit }: { returnRequests: Ret
   return (
     <div className="profile-orders">
       <style>{`
-        .profile-orders button:hover {
+        .profile-orders button:not([data-order-filter]):hover {
           background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
         }
       `}</style>
@@ -697,10 +705,10 @@ function OrdersSection({ returnRequests, onReturnSubmit }: { returnRequests: Ret
         <Search size={16} className="text-gray-400 shrink-0" />
         <input type="text" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} aria-label="جستجوی سفارش با کد سفارش، کد سفارش سایت، شماره حواله یا Uid" placeholder="جستجو بر اساس کد سفارش، کد سفارش سایت، شماره حواله یا Uid" className="min-w-0 flex-1 bg-transparent text-sm font-light text-gray-400 outline-none text-right placeholder:text-gray-400 sm:font-normal" style={{ ...F, fontSize: 14 }} />
       </div>
-      <div className="mb-6 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+      <div className="mb-6 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
         {orderTabs.map(({ key, label, count }) => (
-          <button key={key} onClick={() => { setActiveTab(key); setPage(1); }}
-            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-[6px] py-[3.6px] text-sm font-medium transition-all sm:font-semibold sm:gap-1.5 sm:px-[7.2px] sm:py-[4.8px] ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
+          <button key={key} data-order-filter aria-pressed={activeTab === key} onClick={() => { setActiveTab(key); setPage(1); }}
+            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[15px] font-semibold transition-all sm:gap-1.5 sm:px-3 sm:py-2 ${activeTab === key ? "border-[#CA165C] bg-white text-[#CA165C]" : "border-transparent bg-[#370080]/20 text-[#370080]"}`}
             style={F}>
             {label}
             <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] sm:h-5 sm:w-5 sm:text-xs"
@@ -1134,6 +1142,8 @@ type ReturnItem = { product: ReturnProduct; qty: number; };
 
 export type ReturnRequest = {
   id: string; date: string; items: ReturnItem[]; status: "pending" | "approved" | "rejected"; shippingMethod?: string;
+  productImages?: File[];
+  shippingReceipt?: File;
 };
 
 function reviewReturnItems(items: ReturnItem[]) {
@@ -1172,10 +1182,11 @@ function ReturnSuccessDialog({ open, onOpenChange, requestId, onAfterClose }: {
   );
 }
 
-function ReturnImageUploadBox({ receipt = false, disabled = false, onFilesChange, error = "" }: {
+function ReturnImageUploadBox({ receipt = false, disabled = false, onFilesChange, onSelectedFilesChange, error = "" }: {
   receipt?: boolean;
   disabled?: boolean;
   onFilesChange?: (hasFiles: boolean) => void;
+  onSelectedFilesChange?: (files: File[]) => void;
   error?: string;
 }) {
   const [files, setFiles] = useState<File[]>([]);
@@ -1206,6 +1217,7 @@ function ReturnImageUploadBox({ receipt = false, disabled = false, onFilesChange
     setImageError("");
     setFiles(nextFiles);
     onFilesChange?.(true);
+    onSelectedFilesChange?.(nextFiles);
   };
 
   return (
@@ -1227,18 +1239,20 @@ function ReturnImageUploadBox({ receipt = false, disabled = false, onFilesChange
   );
 }
 
-function ReturnUploadBoxes({ resetKey, disabled = false, onProductsChange, onReceiptChange, productsError, receiptError }: {
+function ReturnUploadBoxes({ resetKey, disabled = false, onProductsChange, onReceiptChange, onProductFilesChange, onReceiptFilesChange, productsError, receiptError }: {
   resetKey: number;
   disabled?: boolean;
   onProductsChange?: (hasFiles: boolean) => void;
   onReceiptChange?: (hasFiles: boolean) => void;
+  onProductFilesChange?: (files: File[]) => void;
+  onReceiptFilesChange?: (files: File[]) => void;
   productsError?: string;
   receiptError?: string;
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <ReturnImageUploadBox key={`products-${resetKey}`} disabled={disabled} onFilesChange={onProductsChange} error={productsError} />
-      <ReturnImageUploadBox key={`receipt-${resetKey}`} receipt disabled={disabled} onFilesChange={onReceiptChange} error={receiptError} />
+      <ReturnImageUploadBox key={`products-${resetKey}`} disabled={disabled} onFilesChange={onProductsChange} onSelectedFilesChange={onProductFilesChange} error={productsError} />
+      <ReturnImageUploadBox key={`receipt-${resetKey}`} receipt disabled={disabled} onFilesChange={onReceiptChange} onSelectedFilesChange={onReceiptFilesChange} error={receiptError} />
     </div>
   );
 }
@@ -1266,7 +1280,7 @@ function ReturnRequestItemRow({ item, onRemove }: { item: ReturnItem; onRemove: 
   );
 }
 
-function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => void }) {
+function ReturnRequestSection({ onSubmit, onViewRequests }: { onSubmit: (req: ReturnRequest) => void; onViewRequests?: () => void }) {
   const [search, setSearch] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [items, setItems] = useState<ReturnItem[]>([]);
@@ -1277,6 +1291,8 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
   const [latestRequestId, setLatestRequestId] = useState("");
   const [uploadResetKey, setUploadResetKey] = useState(0);
   const [hasProductImages, setHasProductImages] = useState(false);
+  const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
+  const [shippingReceiptFiles, setShippingReceiptFiles] = useState<File[]>([]);
   const [hasShippingReceipt, setHasShippingReceipt] = useState(false);
   const [uploadValidationShown, setUploadValidationShown] = useState(false);
   const submitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1322,26 +1338,29 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
     setDropdownOpen(false);
     setShippingMethodOpen(false);
     submitTimer.current = setTimeout(() => {
-      const { acceptedItems } = reviewReturnItems(submittedItems);
       const requestId = `ret-${Date.now()}`;
       setLatestRequestId(requestId);
       setResultDialogOpen(true);
       setItems([]);
       setUploadResetKey(previous => previous + 1);
       setHasProductImages(false);
+      setProductImageFiles([]);
+      setShippingReceiptFiles([]);
       setHasShippingReceipt(false);
       setUploadValidationShown(false);
       setSearch("");
       setShippingMethod("");
       setIsSubmitting(false);
       submitTimer.current = null;
-      if (acceptedItems.length > 0) {
+      if (submittedItems.length > 0) {
         onSubmit({
           id: requestId,
           date: new Date().toLocaleDateString("fa-IR"),
-          items: acceptedItems,
+          items: submittedItems,
           status: "pending",
           shippingMethod,
+          productImages: [...productImageFiles],
+          shippingReceipt: shippingReceiptFiles[0],
         });
       }
     }, 2000);
@@ -1349,7 +1368,7 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
 
   return (
     <div>
-      <ProfileSectionHeading><h1 className="text-right text-sm font-black text-gray-900" style={F}>ثبت درخواست مرجوعی</h1></ProfileSectionHeading>
+      <ProfileSectionHeading><h1 className="text-right text-base font-black text-gray-900 sm:text-xl" style={F}>ثبت درخواست مرجوعی</h1></ProfileSectionHeading>
       <div className="h-px bg-gray-100 mb-5" />
 
       <fieldset disabled={isSubmitting} className="min-w-0">
@@ -1473,6 +1492,8 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
       <div className="mb-6">
         <ReturnUploadBoxes resetKey={uploadResetKey} disabled={isSubmitting}
           onProductsChange={setHasProductImages}
+          onProductFilesChange={setProductImageFiles}
+          onReceiptFilesChange={setShippingReceiptFiles}
           onReceiptChange={setHasShippingReceipt}
           productsError={uploadValidationShown && !hasProductImages ? "لطفا تصویر کالا رو بارگذاری کنید." : ""}
           receiptError={uploadValidationShown && !hasShippingReceipt ? "لطفا تصویر رسید باربری رو بارگذاری کنید." : ""}
@@ -1493,7 +1514,7 @@ function ReturnRequestSection({ onSubmit }: { onSubmit: (req: ReturnRequest) => 
         </button>
       </div>
       </fieldset>
-      <ReturnSuccessDialog open={resultDialogOpen} onOpenChange={setResultDialogOpen} requestId={latestRequestId} onAfterClose={() => searchInputRef.current?.focus()} />
+      <ReturnSuccessDialog open={resultDialogOpen} onOpenChange={setResultDialogOpen} requestId={latestRequestId} onAfterClose={() => { if (onViewRequests) onViewRequests(); else searchInputRef.current?.focus(); }} />
     </div>
   );
 }
@@ -1524,9 +1545,38 @@ const mockReturnRequests: ReturnRequest[] = [
   },
 ];
 
+function ReturnRequestImages({ request }: { request: ReturnRequest }) {
+  const [previews, setPreviews] = useState<{ products: string[]; receipt?: string }>({ products: [] });
+  useEffect(() => {
+    const products = (request.productImages ?? []).map(file => URL.createObjectURL(file));
+    const receipt = request.shippingReceipt ? URL.createObjectURL(request.shippingReceipt) : undefined;
+    setPreviews({ products, receipt });
+    return () => { products.forEach(url => URL.revokeObjectURL(url)); if (receipt) URL.revokeObjectURL(receipt); };
+  }, [request.productImages, request.shippingReceipt]);
+  const productImages = request.productImages?.length ? previews.products : [trendImg1];
+  return (
+    <div className="mt-4 grid max-w-[560px] grid-cols-2 items-start gap-4 px-3 sm:px-6">
+      <div className="min-w-0">
+        <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">رسید باربری</p>
+        <div data-return-receipt className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
+          <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
+            <ImageWithFallback src={previews.receipt ?? roll2} alt="رسید باربری" className="h-full w-full object-cover" />
+          </div>
+        </div>
+      </div>
+      <div className="min-w-0">
+        <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">تصویر کالای مرجوعی</p>
+        <div data-return-product-image className={`grid w-full max-w-[240px] gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3 ${productImages.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+          {productImages.map((src, index) => <div key={src} className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200"><ImageWithFallback src={src} alt={`تصویر کالای مرجوعی ${fmt(index + 1)}`} className="h-full w-full object-cover" /></div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReturnListSection({ requests, embedded = false }: { requests: ReturnRequest[]; embedded?: boolean }) {
-  const allRequests = [...mockReturnRequests, ...requests];
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const allRequests = [...requests, ...mockReturnRequests];
+  const [expanded, setExpanded] = useState<string | null>(() => requests[0]?.id ?? null);
 
   return (
     <div className="min-w-0 pb-4 sm:pb-6 lg:pb-8">
@@ -1589,7 +1639,8 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
                           <div className="min-h-0 overflow-hidden">
                             <div className="border-t border-gray-200 pb-8 pt-4">
                               <p data-return-items-title className="mb-3 px-9 text-right text-sm font-light leading-6 text-[#6A7282] sm:px-18">اقلام مرجوعی</p>
-                              <div className="flex flex-col gap-2 px-9 sm:px-18">
+                              <div className="overflow-x-auto px-3 sm:px-6">
+                                <div className="flex min-w-[560px] flex-col gap-2 sm:min-w-0">
                                 <div aria-hidden="true" className="grid grid-cols-3 rounded-2xl border border-gray-200 bg-white text-sm font-light leading-6 text-[#6A7282]">
                                   <span className="px-2 py-4 text-right sm:px-4">محصول</span>
                                   <span className="px-2 py-4 text-center sm:px-4">UID</span>
@@ -1607,20 +1658,20 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
                                   const fallbackUid = `${item.product.id.replace(/\D/g, "")}${String(index + 1).padStart(10, "0")}`.slice(0, 16);
                                   const uid = item.product.uid ?? fallbackUid;
                                   return (
-                                  <tr key={item.product.id} className="border-t border-gray-200 first:border-t-0">
+                                  <tr key={item.product.id} className="h-[70px] border-t border-gray-200 first:border-t-0">
                                     <td className="px-2 py-3 align-middle sm:px-4">
                                       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                                      <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 sm:size-11">
+                                      <div className="size-11 shrink-0 overflow-hidden rounded-lg border border-gray-200">
                                         <ImageWithFallback src={roll2} alt={item.product.name} className="h-full w-full object-cover" />
                                       </div>
-                                      <span className="min-w-0 break-words text-xs font-medium leading-5 text-[#1E2939] sm:text-sm sm:font-semibold">{item.product.name}</span>
+                                      <span className="min-w-0 break-words text-sm font-medium leading-6 text-[#1E2939]">{item.product.name}</span>
                                       </div>
                                     </td>
                                     <td className="px-2 py-3 text-center align-middle sm:px-4">
-                                      <span dir="ltr" className="block break-all text-center text-[11px] font-medium tabular-nums text-[#1E2939] sm:text-sm">{uid}</span>
+                                      <span dir="ltr" className="block whitespace-nowrap text-center text-sm font-medium tabular-nums text-[#1E2939]">{uid}</span>
                                     </td>
                                     <td className="px-2 py-3 text-center align-middle sm:px-4">
-                                      <span data-return-item-quantity className="whitespace-nowrap rounded-lg border border-[#CA165C] bg-white px-2 py-1 text-xs font-semibold leading-5 text-[#CA165C]">{fmt(1)} عدد</span>
+                                      <span data-return-item-quantity className="whitespace-nowrap rounded-lg border border-[#CA165C] bg-white px-2 py-1 text-xs font-light leading-5 text-[#CA165C]">{fmt(item.qty)} عدد</span>
                                     </td>
                                   </tr>
                                   );
@@ -1629,24 +1680,8 @@ function ReturnListSection({ requests, embedded = false }: { requests: ReturnReq
                                 </table>
                                 </div>
                               </div>
-                              <div className="mt-4 grid max-w-[560px] grid-cols-2 items-start gap-4 px-9 sm:px-18">
-                                <div className="min-w-0">
-                                <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">رسید باربری</p>
-                                <div data-return-receipt className="ml-auto w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
-                                  <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
-                                    <ImageWithFallback src={roll2} alt="رسید باربری" className="h-full w-full object-cover" />
-                                  </div>
-                                </div>
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="mb-2 min-h-12 text-sm font-light leading-6 text-[#6A7282] sm:min-h-0">تصویر کالای مرجوعی</p>
-                                  <div data-return-product-image className="w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
-                                    <div className="aspect-[3/2] w-full overflow-hidden rounded-xl border border-gray-200">
-                                      <ImageWithFallback src={trendImg1} alt="تصویر کالای مرجوعی" className="h-full w-full object-cover" />
-                                    </div>
-                                  </div>
-                                </div>
                               </div>
+                              <ReturnRequestImages request={req} />
                             </div>
                           </div>
                         </div>
@@ -4256,7 +4291,7 @@ export function ProfilePage() {
             {active === "notifs"   && <NotificationsSection />}
             {active === "wishlist" && <WishlistSection />}
             {active === "quick"    && <QuickOrderSection />}
-            {active === "return"    && <ReturnRequestSection onSubmit={handleReturnSubmit} />}
+            {active === "return"    && <ReturnRequestSection onSubmit={handleReturnSubmit} onViewRequests={() => setActive("returns")} />}
             {active === "returns"   && <ReturnListSection requests={returnRequests} />}
             {active === "statement" && <StatementSection />}
             {active === "wallet"    && <WalletSection />}
