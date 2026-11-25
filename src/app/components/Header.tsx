@@ -15,7 +15,7 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
 import { homeAssets as assets } from "@/app/components/home/assets"
 import "@/styles/home-reference.css"
 
-const notificationIcon = `${import.meta.env.BASE_URL}images/header/notification.png`
+const notificationIcon = `${import.meta.env.BASE_URL}images/header/account-notifications.png`
 
 export function getUser(): string | null {
   return localStorage.getItem("consortiumUser")
@@ -41,6 +41,7 @@ export function Header() {
   const [cartCount, setCartCount] = useState(getCartCount)
   const [cartItems, setCartItems] = useState(getCart)
   const [cartOpen, setCartOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const user = getUser()
   useEffect(() => {
@@ -82,9 +83,10 @@ export function Header() {
   }, [])
   useEffect(() => {
     setCartOpen(false)
+    setAccountOpen(false)
     setCartItems(getCart())
     setCartCount(getCartCount())
-  }, [location.pathname])
+  }, [location.pathname, location.search])
   useEffect(() => {
     if (location.pathname !== "/" || location.hash !== "#home-brands") return
     const frame = requestAnimationFrame(() =>
@@ -170,25 +172,22 @@ export function Header() {
               <Link to="/discounts">تخفیفات</Link>
             </nav>
             <div className="home-desktop-search">{search}</div>
-            <Link
-              className="home-login"
-              to={user ? "/profile" : "/login"}
-              onClick={(event) => {
-                if (window.innerWidth < 1024 && user) {
-                  event.preventDefault()
-                  setMobileMenuOpen(true)
-                }
-              }}
-            >
-              <img
-                src={notificationIcon}
-                alt=""
-                className="home-mobile-login-icon"
-                width={30}
-                height={30}
-              />
-              {user ? "کاربر سایت" : "ورود"}
-            </Link>
+            <div className="home-login">
+              <Link to="/profile?section=notifs" aria-label="اعلانات حساب کاربری" className="home-mobile-login-icon">
+                <img src={notificationIcon} alt="" width={30} height={30} />
+              </Link>
+              {user ? (
+                <Popover open={accountOpen} onOpenChange={setAccountOpen}>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="home-account-label">کاربر سایت</button>
+                  </PopoverTrigger>
+                  <PopoverContent align="center" sideOffset={12} collisionPadding={12} dir="rtl" aria-label="منوی حساب کاربری" className="header-account-menu w-[106px] rounded-xl border-gray-200 bg-white px-4 py-2 text-center text-[15px] font-normal text-[#1E2939] shadow-[0_4px_20px_rgba(0,0,0,0.08)]" style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+                    <Link to="/profile?section=profile" onClick={() => setAccountOpen(false)} className="block border-b border-gray-200 py-3 whitespace-nowrap text-[#1E2939] hover:text-[#1E2939] focus-visible:outline-2 focus-visible:outline-[#370080]">پنل مشتری</Link>
+                    <button type="button" onClick={() => { clearUser(); setAccountOpen(false); navigate("/login"); }} className="w-full py-3 text-[#CA165C] hover:text-[#CA165C] focus-visible:outline-2 focus-visible:outline-[#370080]">خروج</button>
+                  </PopoverContent>
+                </Popover>
+              ) : <Link to="/login" className="home-account-label">کاربر سایت</Link>}
+            </div>
             <div className="home-header-actions">
               <Link
                 to="/profile/pricing-details"
@@ -247,7 +246,6 @@ export function Header() {
                             />
                             <div className="header-cart-item-details">
                               <p title={item.name}>{item.name}</p>
-                              <span dir="ltr">{item.code}</span>
                               <span>
                                 {item.qty.toLocaleString("fa-IR")} عدد
                               </span>
@@ -281,7 +279,7 @@ export function Header() {
                 </PopoverContent>
               </Popover>
               <Link
-                to={user ? "/profile" : "/login"}
+                to="/profile?section=notifs"
                 aria-label="اعلانات حساب کاربری"
                 className="home-account"
               >
